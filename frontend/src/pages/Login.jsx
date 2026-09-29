@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { Search } from 'lucide-react';
-import axios from 'axios';
 
 export default function Login() {
   const { t } = useLanguage();
@@ -87,7 +86,7 @@ export default function Login() {
         </form>
 
         <div className="text-center text-sm">
-          <span className="text-slate-500">Don't have an account? </span>
+          <span className="text-slate-500">{t('noAccount')} </span>
           <Link to="/register" className="font-semibold text-emerald-600 hover:text-emerald-500">
             {t('register')}
           </Link>

@@ -29,10 +29,11 @@ const evaluateScheme = (scheme, quiz) => {
 
   const genderRule = criteria.gender || 'Any';
   const genderPassed =
-    genderRule === 'Any' || toLower(genderRule) === toLower(quiz.gender);
+    toLower(genderRule) === 'any' || toLower(genderRule) === toLower(quiz.gender);
   checks.push({ key: 'gender', passed: genderPassed, weight: 1 });
 
-  if (criteria.maxAnnualIncome != null) {
+  // Treat maxAnnualIncome of 0, null, or undefined as "no income cap"
+  if (criteria.maxAnnualIncome != null && criteria.maxAnnualIncome > 0) {
     const income = Number(quiz.annualIncome);
     const passed = !Number.isNaN(income) && income <= criteria.maxAnnualIncome;
     checks.push({ key: 'annualIncome', passed, weight: 1 });
@@ -63,7 +64,7 @@ const evaluateScheme = (scheme, quiz) => {
   return {
     eligible,
     matchPercentage,
-    suitability: eligible ? 'Eligible' : 'Not eligible',
+    suitability: eligible ? 'Eligible' : 'Partially eligible',
     failedChecks: checks.filter((c) => !c.passed).map((c) => c.key),
   };
 };
@@ -100,9 +101,8 @@ const matchSchemes = async (req, res) => {
           eligible: result.eligible,
         };
       })
-      .filter((item) => item.eligible)
-      .sort((a, b) => b.matchPercentage - a.matchPercentage)
-      .map(({ eligible, ...rest }) => rest);
+      .filter((item) => item.matchPercentage >= 70)
+      .sort((a, b) => b.matchPercentage - a.matchPercentage);
 
     res.status(200).json({
       count: matches.length,

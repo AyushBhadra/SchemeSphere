@@ -8,6 +8,7 @@ export default function Quiz() {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     age: '',
     gender: '',
@@ -27,12 +28,18 @@ export default function Quiz() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
     try {
       const response = await api.post('/filter/match', formData);
-      navigate('/results', { state: { schemes: response.data, formData } });
+      // Backend returns { count, matches } — extract the matches array
+      const data = response.data;
+      const schemesArray = data?.matches || data?.schemes || (Array.isArray(data) ? data : []);
+      navigate('/results', { state: { schemes: schemesArray, formData } });
     } catch (error) {
       console.error('Failed to fetch matched schemes', error);
       alert('Failed to find matched schemes. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -49,14 +56,14 @@ export default function Quiz() {
           />
         </div>
         <p className="mt-2 text-sm font-medium text-slate-500">
-          Step {step} of {totalSteps}
+          {t('quizStep')} {step} {t('quizOf')} {totalSteps}
         </p>
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <form onSubmit={step === totalSteps ? handleSubmit : (e) => { e.preventDefault(); nextStep(); }}>
           {step === 1 && (
-            <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
+            <div className="space-y-4">
               <label className="block text-lg font-medium text-slate-900">
                 {t('quizAge')}
               </label>
@@ -75,7 +82,7 @@ export default function Quiz() {
           )}
 
           {step === 2 && (
-            <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
+            <div className="space-y-4">
               <label className="block text-lg font-medium text-slate-900">
                 {t('quizGender')}
               </label>
@@ -86,16 +93,16 @@ export default function Quiz() {
                 required
                 className="input text-lg"
               >
-                <option value="">Select Gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
+                <option value="">{t('selectGender')}</option>
+                <option value="male">{t('male')}</option>
+                <option value="female">{t('female')}</option>
+                <option value="other">{t('other')}</option>
               </select>
             </div>
           )}
 
           {step === 3 && (
-            <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
+            <div className="space-y-4">
               <label className="block text-lg font-medium text-slate-900">
                 {t('quizIncome')}
               </label>
@@ -113,7 +120,7 @@ export default function Quiz() {
           )}
 
           {step === 4 && (
-            <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
+            <div className="space-y-4">
               <label className="block text-lg font-medium text-slate-900">
                 {t('quizOccupation')}
               </label>
@@ -124,18 +131,18 @@ export default function Quiz() {
                 required
                 className="input text-lg"
               >
-                <option value="">Select Occupation</option>
-                <option value="student">Student</option>
-                <option value="farmer">Farmer</option>
-                <option value="business">Business</option>
-                <option value="salaried">Salaried</option>
-                <option value="unemployed">Unemployed</option>
+                <option value="">{t('selectOccupation')}</option>
+                <option value="Student">{t('student')}</option>
+                <option value="Farmer">{t('farmer')}</option>
+                <option value="Business">{t('business')}</option>
+                <option value="Salaried">{t('salaried')}</option>
+                <option value="Unemployed">{t('unemployed')}</option>
               </select>
             </div>
           )}
 
           {step === 5 && (
-            <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
+            <div className="space-y-4">
               <label className="block text-lg font-medium text-slate-900">
                 {t('quizState')}
               </label>
@@ -146,19 +153,24 @@ export default function Quiz() {
                 required
                 className="input text-lg"
               >
-                <option value="">Select State</option>
-                <option value="maharashtra">Maharashtra</option>
-                <option value="delhi">Delhi</option>
-                <option value="karnataka">Karnataka</option>
-                <option value="gujarat">Gujarat</option>
-                <option value="up">Uttar Pradesh</option>
-                <option value="other">Other</option>
+                <option value="">{t('selectState')}</option>
+                <option value="Maharashtra">Maharashtra</option>
+                <option value="Delhi">Delhi</option>
+                <option value="Karnataka">Karnataka</option>
+                <option value="Gujarat">Gujarat</option>
+                <option value="Uttar Pradesh">Uttar Pradesh</option>
+                <option value="Tamil Nadu">Tamil Nadu</option>
+                <option value="Rajasthan">Rajasthan</option>
+                <option value="West Bengal">West Bengal</option>
+                <option value="Bihar">Bihar</option>
+                <option value="Madhya Pradesh">Madhya Pradesh</option>
+                <option value="Other">Other</option>
               </select>
             </div>
           )}
 
           {step === 6 && (
-            <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
+            <div className="space-y-4">
               <label className="block text-lg font-medium text-slate-900">
                 {t('quizCategory')}
               </label>
@@ -169,12 +181,12 @@ export default function Quiz() {
                 required
                 className="input text-lg"
               >
-                <option value="">Select Category</option>
-                <option value="general">General</option>
-                <option value="obc">OBC</option>
-                <option value="sc">SC</option>
-                <option value="st">ST</option>
-                <option value="ebc">EBC</option>
+                <option value="">{t('selectCategory')}</option>
+                <option value="General">General</option>
+                <option value="OBC">OBC</option>
+                <option value="SC">SC</option>
+                <option value="ST">ST</option>
+                <option value="EBC">EBC</option>
               </select>
             </div>
           )}
@@ -195,11 +207,12 @@ export default function Quiz() {
             
             <button
               type="submit"
-              className="flex items-center gap-2 rounded-xl bg-emerald-600 px-8 py-3 font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700"
+              disabled={submitting}
+              className="flex items-center gap-2 rounded-xl bg-emerald-600 px-8 py-3 font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:opacity-50"
             >
               {step === totalSteps ? (
                 <>
-                  {t('submit')}
+                  {submitting ? t('analyzing') : t('submit')}
                   <CheckCircle2 size={20} />
                 </>
               ) : (

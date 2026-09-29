@@ -5,7 +5,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { BookmarkMinus, ExternalLink } from 'lucide-react';
 
 export default function Dashboard() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { user, toggleBookmark } = useAuth();
   const navigate = useNavigate();
   const [savedSchemes, setSavedSchemes] = useState([]);
@@ -31,15 +31,18 @@ export default function Dashboard() {
   const removeScheme = async (id) => {
     try {
       await toggleBookmark(id);
-      // The toggleBookmark function in AuthContext already refetches the profile
-      // so user.savedSchemes will update and the useEffect will catch it
+      // toggleBookmark already refetches the profile which updates user.savedSchemes
     } catch (error) {
       console.error('Failed to remove bookmark', error);
     }
   };
 
   if (loading) {
-    return <div className="p-8 text-center">Loading...</div>;
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600"></div>
+      </div>
+    );
   }
 
   return (
@@ -49,7 +52,7 @@ export default function Dashboard() {
           {t('welcome')}, {user?.name}!
         </h1>
         <p className="mt-2 text-lg text-slate-600">
-          Manage your saved government schemes.
+          {t('manageSavedSchemes')}
         </p>
       </div>
 
@@ -62,34 +65,39 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="space-y-4">
-            {savedSchemes.map((scheme) => (
-              <div key={scheme._id} className="flex flex-col justify-between gap-4 rounded-xl border border-slate-100 bg-slate-50 p-4 sm:flex-row sm:items-center">
-                <div>
-                  <h3 className="text-lg font-semibold text-slate-900">{scheme.title}</h3>
-                  <p className="text-sm text-slate-500">{scheme.department}</p>
+            {savedSchemes.map((scheme) => {
+              const title = (language === 'hi' && scheme?.titleHindi) ? scheme.titleHindi : (scheme?.title || 'Untitled');
+              const applyUrl = scheme?.applicationUrl || scheme?.link || '#';
+
+              return (
+                <div key={scheme?._id || Math.random()} className="flex flex-col justify-between gap-4 rounded-xl border border-slate-100 bg-slate-50 p-4 sm:flex-row sm:items-center">
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
+                    <p className="text-sm text-slate-500">{scheme?.department || ''}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                      {scheme?.category || 'Scheme'}
+                    </span>
+                    <a
+                      href={applyUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 rounded-lg bg-emerald-100 px-3 py-2 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-200"
+                    >
+                      {t('applyNow')} <ExternalLink size={16} />
+                    </a>
+                    <button
+                      onClick={() => removeScheme(scheme?._id)}
+                      className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100"
+                      title="Remove"
+                    >
+                      <BookmarkMinus size={18} />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
-                    {scheme.status}
-                  </span>
-                  <a
-                    href={scheme.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 rounded-lg bg-emerald-100 px-3 py-2 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-200"
-                  >
-                    Apply <ExternalLink size={16} />
-                  </a>
-                  <button
-                    onClick={() => removeScheme(scheme._id)}
-                    className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100"
-                    title="Remove"
-                  >
-                    <BookmarkMinus size={18} />
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

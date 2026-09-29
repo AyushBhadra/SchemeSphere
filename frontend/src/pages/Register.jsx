@@ -116,7 +116,7 @@ export default function Register() {
         </form>
 
         <div className="text-center text-sm">
-          <span className="text-slate-500">Already have an account? </span>
+          <span className="text-slate-500">{t('haveAccount')} </span>
           <Link to="/login" className="font-semibold text-emerald-600 hover:text-emerald-500">
             {t('login')}
           </Link>
