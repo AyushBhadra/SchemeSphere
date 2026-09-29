@@ -11,7 +11,7 @@ export default function Quiz() {
   const [formData, setFormData] = useState({
     age: '',
     gender: '',
-    income: '',
+    annualIncome: '',
     occupation: '',
     state: '',
     category: ''
@@ -101,8 +101,8 @@ export default function Quiz() {
               </label>
               <input
                 type="number"
-                name="income"
-                value={formData.income}
+                name="annualIncome"
+                value={formData.annualIncome}
                 onChange={handleInputChange}
                 required
                 className="input text-lg"
