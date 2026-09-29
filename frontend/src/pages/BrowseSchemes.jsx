@@ -2,8 +2,9 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
-import { Search, Filter, ExternalLink, Bookmark, BookmarkCheck, ChevronDown } from 'lucide-react';
+import { Search, Filter, ExternalLink, Bookmark, BookmarkCheck, ChevronDown, Info } from 'lucide-react';
 import api from '../services/api';
+import SchemeDetailsModal from '../components/SchemeDetailsModal';
 
 const CATEGORIES = ['All', 'Agriculture', 'Healthcare', 'Education', 'Financial', 'Housing', 'Social Security', 'Women & Child', 'Employment', 'Skill Development'];
 const STATES = ['All States', 'All-India', 'Maharashtra', 'Uttar Pradesh', 'Madhya Pradesh', 'Karnataka', 'Bihar', 'Rajasthan', 'Delhi', 'Gujarat', 'Tamil Nadu', 'West Bengal'];
@@ -15,6 +16,7 @@ export default function BrowseSchemes() {
   const [schemes, setSchemes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [savedSet, setSavedSet] = useState(new Set());
+  const [selectedScheme, setSelectedScheme] = useState(null);
 
   const searchQuery = searchParams.get('search') || '';
   const categoryFilter = searchParams.get('category') || 'All';
@@ -163,14 +165,22 @@ export default function BrowseSchemes() {
                   )}
                 </div>
                 <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-5 py-3">
-                  <a
-                    href={scheme?.applicationUrl || '#'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 text-sm font-semibold text-emerald-600 hover:text-emerald-700"
-                  >
-                    {t('applyNow')} <ExternalLink size={14} />
-                  </a>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setSelectedScheme(scheme)}
+                      className="flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-slate-900"
+                    >
+                      <Info size={14} /> {t('viewDetails')}
+                    </button>
+                    <a
+                      href={scheme?.applicationUrl || '#'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 text-sm font-semibold text-emerald-600 hover:text-emerald-700"
+                    >
+                      {t('applyNow')} <ExternalLink size={14} />
+                    </a>
+                  </div>
                   {user && (
                     <button
                       onClick={() => handleToggleSave(scheme._id)}
@@ -185,6 +195,13 @@ export default function BrowseSchemes() {
           })}
         </div>
       )}
+
+      {/* Details Modal */}
+      <SchemeDetailsModal 
+        scheme={selectedScheme} 
+        isOpen={!!selectedScheme} 
+        onClose={() => setSelectedScheme(null)} 
+      />
     </div>
   );
 }

@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
-import { Bookmark, BookmarkCheck, ExternalLink, Percent, FileText, CheckCircle2, ArrowLeft } from 'lucide-react';
+import { Bookmark, BookmarkCheck, ExternalLink, Percent, FileText, CheckCircle2, ArrowLeft, Info } from 'lucide-react';
+import SchemeDetailsModal from '../components/SchemeDetailsModal';
 
 export default function Results() {
   const { t, language } = useLanguage();
@@ -11,6 +12,7 @@ export default function Results() {
   const { user, toggleBookmark } = useAuth();
   const [savedSchemes, setSavedSchemes] = useState(new Set());
   const [loading, setLoading] = useState(true);
+  const [selectedScheme, setSelectedScheme] = useState(null);
 
   // Safely extract schemes from navigation state
   const rawSchemes = location.state?.schemes;
@@ -201,15 +203,24 @@ export default function Results() {
               </div>
 
               <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 p-6 print:hidden">
-                <a
-                  href={applyUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700"
-                >
-                  {t('applyNow')}
-                  <ExternalLink size={16} />
-                </a>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setSelectedScheme(scheme)}
+                    className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+                  >
+                    <Info size={16} />
+                    {t('viewDetails')}
+                  </button>
+                  <a
+                    href={applyUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700"
+                  >
+                    {t('applyNow')}
+                    <ExternalLink size={16} />
+                  </a>
+                </div>
                 <button
                   onClick={() => toggleSave(schemeId)}
                   className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors ${
@@ -235,6 +246,13 @@ export default function Results() {
           );
         })}
       </div>
+
+      {/* Details Modal */}
+      <SchemeDetailsModal 
+        scheme={selectedScheme} 
+        isOpen={!!selectedScheme} 
+        onClose={() => setSelectedScheme(null)} 
+      />
     </div>
   );
 }

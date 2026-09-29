@@ -152,7 +152,19 @@ export const LanguageProvider = ({ children }) => {
       criteriaNotMet: 'Criteria Not Met',
       stateMatched: 'State Matched',
       incomeWithinRange: 'Income within range',
-      ageCriteriaMet: 'Age Criteria Met'
+      ageCriteriaMet: 'Age Criteria Met',
+
+      // Modal
+      viewDetails: 'View Details',
+      close: 'Close',
+      applyOnOfficialPortal: 'Apply on Official Portal',
+      overview: 'Overview',
+      eligibilityCriteria: 'Eligibility Criteria',
+      ageLimit: 'Age Limit',
+      gender: 'Gender',
+      incomeLimit: 'Income Limit',
+      targetOccupations: 'Target Occupations',
+      applicableStates: 'Applicable States',
     },
     hi: {
       // Navbar
@@ -288,7 +300,19 @@ export const LanguageProvider = ({ children }) => {
       criteriaNotMet: 'मानदंड पूरे नहीं हुए',
       stateMatched: 'राज्य मेल खाया',
       incomeWithinRange: 'आय सीमा के भीतर',
-      ageCriteriaMet: 'आयु मानदंड पूरे हुए'
+      ageCriteriaMet: 'आयु मानदंड पूरे हुए',
+
+      // Modal
+      viewDetails: 'विवरण देखें',
+      close: 'बंद करें',
+      applyOnOfficialPortal: 'आधिकारिक पोर्टल पर आवेदन करें',
+      overview: 'अवलोकन',
+      eligibilityCriteria: 'पात्रता मानदंड',
+      ageLimit: 'आयु सीमा',
+      gender: 'लिंग',
+      incomeLimit: 'आय सीमा',
+      targetOccupations: 'लक्षित व्यवसाय',
+      applicableStates: 'लागू राज्य',
     },
   };
 
