@@ -10,6 +10,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import BrowseSchemes from './pages/BrowseSchemes';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/quiz" element={<Quiz />} />
+                <Route path="/browse" element={<BrowseSchemes />} />
                 <Route path="/results" element={<Results />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
