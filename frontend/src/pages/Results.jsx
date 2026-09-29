@@ -97,11 +97,18 @@ export default function Results() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
-      <div className="mb-10 text-center">
+      <div className="mb-10 text-center flex flex-col items-center">
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">{t('resultsTitle')}</h1>
         <p className="mt-4 text-lg text-slate-600">
           {t('resultsSubtitle').replace('{count}', String(schemes.length))}
         </p>
+        <button
+          onClick={() => window.print()}
+          className="mt-6 inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 print:hidden"
+        >
+          <FileText size={16} />
+          {t('printChecklist')}
+        </button>
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2">
@@ -159,10 +166,41 @@ export default function Results() {
                       </ul>
                     </div>
                   )}
+
+                  {/* Eligibility Criteria Breakdown */}
+                  <details className="group/details border-t border-slate-100 pt-4 cursor-pointer">
+                    <summary className="font-semibold text-slate-800 outline-none list-none flex items-center justify-between">
+                      {t('eligibilityBreakdown')}
+                      <span className="text-slate-400 group-open/details:rotate-180 transition-transform">▼</span>
+                    </summary>
+                    <div className="mt-3 space-y-2 pl-2 border-l-2 border-slate-200">
+                      {item.failedChecks ? (
+                        <>
+                          <div className="text-sm">
+                            <span className={item.failedChecks.includes('age') || item.failedChecks.includes('minAge') || item.failedChecks.includes('maxAge') ? "text-red-500 font-medium" : "text-emerald-600 font-medium"}>
+                              • {t('ageCriteriaMet')}: {item.failedChecks.includes('age') || item.failedChecks.includes('minAge') || item.failedChecks.includes('maxAge') ? t('criteriaNotMet') : t('criteriaMet')}
+                            </span>
+                          </div>
+                          <div className="text-sm">
+                            <span className={item.failedChecks.includes('state') ? "text-red-500 font-medium" : "text-emerald-600 font-medium"}>
+                              • {t('stateMatched')}: {item.failedChecks.includes('state') ? t('criteriaNotMet') : t('criteriaMet')}
+                            </span>
+                          </div>
+                          <div className="text-sm">
+                            <span className={item.failedChecks.includes('annualIncome') ? "text-red-500 font-medium" : "text-emerald-600 font-medium"}>
+                              • {t('incomeWithinRange')}: {item.failedChecks.includes('annualIncome') ? t('criteriaNotMet') : t('criteriaMet')}
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-sm text-emerald-600 font-medium">• {t('criteriaMet')} (100%)</div>
+                      )}
+                    </div>
+                  </details>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 p-6">
+              <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 p-6 print:hidden">
                 <a
                   href={applyUrl}
                   target="_blank"

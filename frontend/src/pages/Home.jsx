@@ -7,10 +7,10 @@ export default function Home() {
   const { t } = useLanguage();
 
   const categories = [
-    { name: t('agriculture'), icon: BookOpen, color: 'text-emerald-600', bg: 'bg-emerald-100' },
-    { name: t('health'), icon: Stethoscope, color: 'text-blue-600', bg: 'bg-blue-100' },
-    { name: t('education'), icon: GraduationCap, color: 'text-indigo-600', bg: 'bg-indigo-100' },
-    { name: t('housing'), icon: HomeIcon, color: 'text-orange-600', bg: 'bg-orange-100' },
+    { name: t('agriculture'), icon: BookOpen, color: 'text-emerald-600', bg: 'bg-emerald-100', value: 'Agriculture' },
+    { name: t('health'), icon: Stethoscope, color: 'text-blue-600', bg: 'bg-blue-100', value: 'Healthcare' },
+    { name: t('education'), icon: GraduationCap, color: 'text-indigo-600', bg: 'bg-indigo-100', value: 'Education' },
+    { name: t('housing'), icon: HomeIcon, color: 'text-orange-600', bg: 'bg-orange-100', value: 'Housing' },
   ];
 
   return (
@@ -41,6 +41,30 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Live Statistics Banner */}
+      <section className="border-y border-slate-200 bg-white py-12">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 gap-8 text-center sm:grid-cols-4">
+            <div>
+              <div className="text-4xl font-extrabold text-emerald-600">75+</div>
+              <div className="mt-2 text-sm font-medium text-slate-500">{t('statsSchemes')}</div>
+            </div>
+            <div>
+              <div className="text-4xl font-extrabold text-blue-600">9</div>
+              <div className="mt-2 text-sm font-medium text-slate-500">{t('statsSectors')}</div>
+            </div>
+            <div>
+              <div className="text-4xl font-extrabold text-indigo-600">28</div>
+              <div className="mt-2 text-sm font-medium text-slate-500">{t('statsStates')}</div>
+            </div>
+            <div>
+              <div className="text-4xl font-extrabold text-orange-600">100%</div>
+              <div className="mt-2 text-sm font-medium text-slate-500">{t('statsFree')}</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Categories Section */}
       <section className="bg-white py-24 sm:py-32">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -54,9 +78,10 @@ export default function Home() {
             {categories.map((category) => {
               const Icon = category.icon;
               return (
-                <div
+                <Link
+                  to={`/browse?category=${category.value}`}
                   key={category.name}
-                  className="group relative cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-white p-8 shadow-sm transition-all hover:shadow-md"
+                  className="group relative cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-white p-8 shadow-sm transition-all hover:shadow-md block"
                 >
                   <div className={`inline-flex rounded-lg p-3 ${category.bg} ${category.color} ring-4 ring-white`}>
                     <Icon size={24} />
@@ -65,7 +90,7 @@ export default function Home() {
                     {category.name}
                   </h3>
                   <div className="absolute bottom-0 left-0 h-1 w-full translate-y-full bg-emerald-500 transition-transform group-hover:translate-y-0" />
-                </div>
+                </Link>
               );
             })}
           </div>

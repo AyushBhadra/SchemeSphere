@@ -6,7 +6,7 @@ const schemeSchema = new mongoose.Schema({
   department: { type: String },
   category: {
     type: String,
-    enum: ['Education', 'Healthcare', 'Agriculture', 'Financial', 'Housing'],
+    enum: ['Education', 'Healthcare', 'Agriculture', 'Financial', 'Housing', 'Social Security', 'Women & Child', 'Employment', 'Skill Development'],
     required: true,
   },
   description: { type: String },

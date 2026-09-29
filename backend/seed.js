@@ -1,239 +1,105 @@
 require('dotenv').config();
-
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const connectDB = require('./config/db');
 const Scheme = require('./models/Scheme');
 const User = require('./models/User');
 
+const ALL = ['General', 'OBC', 'SC', 'ST'];
 const schemes = [
-  {
-    title: 'PM-KISAN (Pradhan Mantri Kisan Samman Nidhi)',
-    titleHindi: 'प्रधानमंत्री किसान सम्मान निधि',
-    department: 'Ministry of Agriculture and Farmers Welfare',
-    category: 'Agriculture',
-    description: 'A central sector scheme that provides income support to landholding farmer families across India.',
-    descriptionHindi: 'यह एक केंद्रीय क्षेत्र की योजना है जो भारत भर के भूमिधारक किसान परिवारों को आय सहायता प्रदान करती है।',
-    benefits: '₹6,000 per year in three instalments of ₹2,000 each, transferred directly to the farmer’s bank account.',
-    benefitsHindi: 'प्रति वर्ष ₹6,000, तीन किस्तों में ₹2,000 प्रत्येक, सीधे किसान के बैंक खाते में।',
-    applicationUrl: 'https://pmkisan.gov.in/',
-    deadline: null,
-    criteria: { minAge: 18, maxAge: 100, gender: 'Any', maxAnnualIncome: null, targetOccupations: ['Farmer', 'Farmer'], state: 'All-India', casteCategories: ['General', 'OBC', 'SC', 'ST'] },
-    requiredDocuments: ['Aadhaar Card', 'Land ownership records', 'Bank account details']
-  },
-  {
-    title: 'Ayushman Bharat – PMJAY',
-    titleHindi: 'आयुष्मान भारत – पीएमजय',
-    department: 'Ministry of Health and Family Welfare',
-    category: 'Healthcare',
-    description: 'The world’s largest publicly funded health assurance scheme.',
-    descriptionHindi: 'विश्व की सबसे बड़ी सार्वजनिक रूप से वित्तपोषित स्वास्थ्य आश्वासन योजना।',
-    benefits: 'Health cover of up to ₹5 lakh per family per year for secondary and tertiary care hospitalisation.',
-    benefitsHindi: 'परिवार प्रति वर्ष ₹5 लाख तक का स्वास्थ्य कवर।',
-    applicationUrl: 'https://nha.gov.in/PM-JAY',
-    deadline: null,
-    criteria: { minAge: 0, maxAge: 120, gender: 'Any', maxAnnualIncome: 500000, targetOccupations: [], state: 'All-India', casteCategories: ['General', 'OBC', 'SC', 'ST'] },
-    requiredDocuments: ['Aadhaar Card', 'Ration Card']
-  },
-  {
-    title: 'Post-Matric Scholarship',
-    titleHindi: 'पोस्ट-मैट्रिक छात्रवृत्ति',
-    department: 'Ministry of Social Justice and Empowerment',
-    category: 'Education',
-    description: 'A centrally sponsored scholarship for students from backward classes studying in post-matriculation courses.',
-    descriptionHindi: 'मान्यता प्राप्त पोस्ट-मैट्रिक पाठ्यक्रमों में अध्ययनरत छात्रों के लिए केंद्र प्रायोजित छात्रवृत्ति।',
-    benefits: 'Maintenance allowance, reimbursement of compulsory non-refundable fees.',
-    benefitsHindi: 'रखरखाव भत्ता, अनिवार्य गैर-वापसी योग्य शुल्क की प्रतिपूर्ति।',
-    applicationUrl: 'https://scholarships.gov.in/',
-    deadline: null,
-    criteria: { minAge: 16, maxAge: 35, gender: 'Any', maxAnnualIncome: 250000, targetOccupations: ['Student'], state: 'All-India', casteCategories: ['SC', 'ST', 'OBC'] },
-    requiredDocuments: ['Aadhaar Card', 'Caste certificate', 'Income certificate', 'Marksheet']
-  },
-  {
-    title: 'PM Awas Yojana (Urban/Gramin)',
-    titleHindi: 'प्रधानमंत्री आवास योजना (शहरी/ग्रामीण)',
-    department: 'Ministry of Housing',
-    category: 'Housing',
-    description: 'A flagship housing mission to provide pucca houses with basic amenities.',
-    descriptionHindi: 'मूल सुविधाओं वाले पक्के मकान उपलब्ध कराने का प्रमुख आवास मिशन।',
-    benefits: 'Interest subsidy on home loans and central assistance for construction.',
-    benefitsHindi: 'गृह ऋण पर ब्याज सब्सिडी और पक्के मकान के निर्माण के लिए केंद्रीय सहायता।',
-    applicationUrl: 'https://pmaymis.gov.in/',
-    deadline: null,
-    criteria: { minAge: 18, maxAge: 70, gender: 'Any', maxAnnualIncome: 1800000, targetOccupations: [], state: 'All-India', casteCategories: ['General', 'OBC', 'SC', 'ST'] },
-    requiredDocuments: ['Aadhaar Card', 'Income certificate', 'Bank account details']
-  },
-  {
-    title: 'Pradhan Mantri Mudra Yojana (PMMY)',
-    titleHindi: 'प्रधानमंत्री मुद्रा योजना',
-    department: 'Ministry of Finance',
-    category: 'Financial',
-    description: 'Provides collateral-free institutional credit to non-corporate, non-farm micro and small enterprises.',
-    descriptionHindi: 'सूक्ष्म और लघु उद्यमों को बिना गारंटी संस्थागत ऋण प्रदान करती है।',
-    benefits: 'Collateral-free loans up to ₹10 lakh for business activities.',
-    benefitsHindi: 'व्यवसाय गतिविधियों के लिए बिना गारंटी ₹10 लाख तक का ऋण।',
-    applicationUrl: 'https://www.mudra.org.in/',
-    deadline: null,
-    criteria: { minAge: 18, maxAge: 65, gender: 'Any', maxAnnualIncome: null, targetOccupations: ['Business', 'Self-employed'], state: 'All-India', casteCategories: ['General', 'OBC', 'SC', 'ST'] },
-    requiredDocuments: ['Aadhaar Card', 'PAN Card', 'Business plan']
-  },
-  {
-    title: 'Sukanya Samriddhi Yojana',
-    titleHindi: 'सुकन्या समृद्धि योजना',
-    department: 'Ministry of Finance',
-    category: 'Financial',
-    description: 'A small-savings scheme under Beti Bachao Beti Padhao for the girl child.',
-    descriptionHindi: 'बालिका के लिए लघु बचत योजना।',
-    benefits: 'Attractive government-notified interest rate, tax deduction on deposits.',
-    benefitsHindi: 'आकर्षक ब्याज दर, जमा पर कर कटौती।',
-    applicationUrl: 'https://www.nsiindia.gov.in/',
-    deadline: null,
-    criteria: { minAge: 0, maxAge: 10, gender: 'Female', maxAnnualIncome: null, targetOccupations: [], state: 'All-India', casteCategories: ['General', 'OBC', 'SC', 'ST'] },
-    requiredDocuments: ['Birth certificate of girl child', 'Guardian Aadhaar']
-  },
-  {
-    title: 'Atal Pension Yojana (APY)',
-    titleHindi: 'अटल पेंशन योजना',
-    department: 'Ministry of Finance',
-    category: 'Financial',
-    description: 'Pension scheme for workers in the unorganized sector.',
-    descriptionHindi: 'असंगठित क्षेत्र के श्रमिकों के लिए पेंशन योजना।',
-    benefits: 'Guaranteed minimum pension of ₹1,000 to ₹5,000 per month after age 60.',
-    benefitsHindi: '60 वर्ष की आयु के बाद ₹1,000 से ₹5,000 प्रति माह की गारंटीकृत न्यूनतम पेंशन।',
-    applicationUrl: 'https://npscra.nsdl.co.in/scheme-details.php',
-    deadline: null,
-    criteria: { minAge: 18, maxAge: 40, gender: 'Any', maxAnnualIncome: null, targetOccupations: ['Unemployed', 'Farmer', 'Business'], state: 'All-India', casteCategories: ['General', 'OBC', 'SC', 'ST'] },
-    requiredDocuments: ['Aadhaar Card', 'Bank account details']
-  },
-  {
-    title: 'PM Vishwakarma Kaushal Samman',
-    titleHindi: 'पीएम विश्वकर्मा कौशल सम्मान',
-    department: 'Ministry of MSME',
-    category: 'Financial',
-    description: 'Scheme for traditional artisans and craftspeople of 18 trades.',
-    descriptionHindi: '18 पारंपरिक व्यवसायों के कारीगरों के लिए योजना।',
-    benefits: 'Skill training, toolkit incentive, collateral-free credit.',
-    benefitsHindi: 'कौशल प्रशिक्षण, टूलकिट प्रोत्साहन, बिना गारंटी ऋण।',
-    applicationUrl: 'https://pmvishwakarma.gov.in/',
-    deadline: null,
-    criteria: { minAge: 18, maxAge: 60, gender: 'Any', maxAnnualIncome: null, targetOccupations: ['Business', 'Artisan', 'Self-employed'], state: 'All-India', casteCategories: ['General', 'OBC', 'SC', 'ST'] },
-    requiredDocuments: ['Aadhaar Card', 'Bank account details']
-  },
-  {
-    title: 'PM SVANidhi',
-    titleHindi: 'पीएम स्वनिधि',
-    department: 'Ministry of Housing and Urban Affairs',
-    category: 'Financial',
-    description: 'Special micro-credit facility for street vendors.',
-    descriptionHindi: 'स्ट्रीट वेंडरों के लिए विशेष सूक्ष्म-ऋण सुविधा।',
-    benefits: 'Working capital loan up to ₹10,000 with interest subsidy.',
-    benefitsHindi: 'ब्याज सब्सिडी के साथ ₹10,000 तक का कार्यशील पूंजी ऋण।',
-    applicationUrl: 'https://pmsvanidhi.mohua.gov.in/',
-    deadline: null,
-    criteria: { minAge: 18, maxAge: 65, gender: 'Any', maxAnnualIncome: null, targetOccupations: ['Business', 'Street Vendor'], state: 'All-India', casteCategories: ['General', 'OBC', 'SC', 'ST'] },
-    requiredDocuments: ['Aadhaar Card', 'Vending Certificate']
-  },
-  {
-    title: 'National Means-cum-Merit Scholarship',
-    titleHindi: 'राष्ट्रीय साधन-सह-मेधा छात्रवृत्ति',
-    department: 'Ministry of Education',
-    category: 'Education',
-    description: 'Awarded to meritorious students of economically weaker sections.',
-    descriptionHindi: 'आर्थिक रूप से कमजोर वर्गों के मेधावी छात्रों को प्रदान किया जाता है।',
-    benefits: 'Scholarship of ₹12,000 per annum.',
-    benefitsHindi: '₹12,000 प्रति वर्ष की छात्रवृत्ति।',
-    applicationUrl: 'https://scholarships.gov.in/',
-    deadline: null,
-    criteria: { minAge: 13, maxAge: 18, gender: 'Any', maxAnnualIncome: 350000, targetOccupations: ['Student'], state: 'All-India', casteCategories: ['General', 'OBC', 'SC', 'ST'] },
-    requiredDocuments: ['Aadhaar Card', 'Income certificate', 'Marksheet']
-  },
-  {
-    title: 'Stand-Up India Scheme',
-    titleHindi: 'स्टैंड-अप इंडिया योजना',
-    department: 'Ministry of Finance',
-    category: 'Financial',
-    description: 'Facilitates bank loans for SC/ST and Women entrepreneurs.',
-    descriptionHindi: 'एससी/एसटी और महिला उद्यमियों के लिए बैंक ऋण की सुविधा।',
-    benefits: 'Bank loans between ₹10 lakh and ₹1 crore for setting up a greenfield enterprise.',
-    benefitsHindi: '₹10 लाख और ₹1 करोड़ के बीच का बैंक ऋण।',
-    applicationUrl: 'https://www.standupmitra.in/',
-    deadline: null,
-    criteria: { minAge: 18, maxAge: 65, gender: 'Any', maxAnnualIncome: null, targetOccupations: ['Business'], state: 'All-India', casteCategories: ['SC', 'ST'] },
-    requiredDocuments: ['Aadhaar Card', 'PAN Card', 'Business plan']
-  },
-  {
-    title: 'PM Ujjwala Yojana',
-    titleHindi: 'पीएम उज्ज्वला योजना',
-    department: 'Ministry of Petroleum and Natural Gas',
-    category: 'Housing',
-    description: 'Providing clean cooking fuel to poor households.',
-    descriptionHindi: 'गरीब परिवारों को स्वच्छ खाना पकाने का ईंधन प्रदान करना।',
-    benefits: 'Financial support of ₹1600 for each LPG connection to BPL households.',
-    benefitsHindi: 'बीपीएल परिवारों को प्रत्येक एलपीजी कनेक्शन के लिए ₹1600 की वित्तीय सहायता।',
-    applicationUrl: 'https://www.pmuy.gov.in/',
-    deadline: null,
-    criteria: { minAge: 18, maxAge: 80, gender: 'Female', maxAnnualIncome: 100000, targetOccupations: [], state: 'All-India', casteCategories: ['General', 'OBC', 'SC', 'ST'] },
-    requiredDocuments: ['Aadhaar Card', 'BPL Ration Card']
-  },
-  {
-    title: 'NSAP – IGNOAPS',
-    titleHindi: 'राष्ट्रीय सामाजिक सहायता कार्यक्रम - इग्नोएपीएस',
-    department: 'Ministry of Rural Development',
-    category: 'Financial',
-    description: 'Pension to elderly persons belonging to Below Poverty Line households.',
-    descriptionHindi: 'गरीबी रेखा से नीचे के परिवारों के वृद्ध व्यक्तियों को पेंशन।',
-    benefits: 'Monthly old-age pension.',
-    benefitsHindi: 'मासिक वृद्धावस्था पेंशन।',
-    applicationUrl: 'https://nsap.nic.in/',
-    deadline: null,
-    criteria: { minAge: 60, maxAge: 120, gender: 'Any', maxAnnualIncome: 100000, targetOccupations: [], state: 'All-India', casteCategories: ['General', 'OBC', 'SC', 'ST'] },
-    requiredDocuments: ['Aadhaar Card', 'Age proof', 'BPL certificate']
-  },
-  {
-    title: 'Janani Suraksha Yojana',
-    titleHindi: 'जननी सुरक्षा योजना',
-    department: 'Ministry of Health and Family Welfare',
-    category: 'Healthcare',
-    description: 'Safe motherhood intervention under the National Health Mission.',
-    descriptionHindi: 'राष्ट्रीय स्वास्थ्य मिशन के तहत सुरक्षित मातृत्व हस्तक्षेप।',
-    benefits: 'Cash assistance for delivery and post-delivery care.',
-    benefitsHindi: 'प्रसव और प्रसव के बाद की देखभाल के लिए नकद सहायता।',
-    applicationUrl: 'https://nhm.gov.in/',
-    deadline: null,
-    criteria: { minAge: 18, maxAge: 50, gender: 'Female', maxAnnualIncome: 150000, targetOccupations: [], state: 'All-India', casteCategories: ['General', 'OBC', 'SC', 'ST'] },
-    requiredDocuments: ['Aadhaar Card', 'MCP Card']
-  },
-  {
-    title: 'PM Employment Generation Programme (PMEGP)',
-    titleHindi: 'पीएम रोजगार सृजन कार्यक्रम',
-    department: 'Ministry of MSME',
-    category: 'Financial',
-    description: 'Credit-linked subsidy programme to generate employment opportunities.',
-    descriptionHindi: 'रोजगार के अवसर पैदा करने के लिए क्रेडिट-लिंक्ड सब्सिडी कार्यक्रम।',
-    benefits: 'Subsidy up to 35% on project cost for setting up micro-enterprises.',
-    benefitsHindi: 'सूक्ष्म उद्यम स्थापित करने के लिए परियोजना लागत पर 35% तक की सब्सिडी।',
-    applicationUrl: 'https://www.kviconline.gov.in/pmegpeportal/',
-    deadline: null,
-    criteria: { minAge: 18, maxAge: 65, gender: 'Any', maxAnnualIncome: null, targetOccupations: ['Business', 'Unemployed'], state: 'All-India', casteCategories: ['General', 'OBC', 'SC', 'ST'] },
-    requiredDocuments: ['Aadhaar Card', 'Project Report', 'Education Certificate']
-  },
-  {
-    title: 'Pre-Matric Scholarship Scheme',
-    titleHindi: 'प्री-मैट्रिक छात्रवृत्ति योजना',
-    department: 'Ministry of Minority Affairs',
-    category: 'Education',
-    description: 'Scholarship for minority community students studying in classes 1 to 10.',
-    descriptionHindi: 'कक्षा 1 से 10 में पढ़ने वाले अल्पसंख्यक समुदाय के छात्रों के लिए छात्रवृत्ति।',
-    benefits: 'Admission fee, tuition fee, and maintenance allowance.',
-    benefitsHindi: 'प्रवेश शुल्क, ट्यूशन शुल्क और रखरखाव भत्ता।',
-    applicationUrl: 'https://scholarships.gov.in/',
-    deadline: null,
-    criteria: { minAge: 5, maxAge: 16, gender: 'Any', maxAnnualIncome: 100000, targetOccupations: ['Student'], state: 'All-India', casteCategories: ['General', 'OBC', 'SC', 'ST'] },
-    requiredDocuments: ['Aadhaar Card', 'Income certificate', 'Self-declaration of minority community']
-  }
+  // ── AGRICULTURE (10) ──────────────────────────────────────────
+  { title:'PM-KISAN (Pradhan Mantri Kisan Samman Nidhi)', titleHindi:'प्रधानमंत्री किसान सम्मान निधि', department:'Ministry of Agriculture & Farmers Welfare', category:'Agriculture', description:'Income support of ₹6,000/year to landholding farmer families.', descriptionHindi:'भूमिधारक किसान परिवारों को ₹6,000/वर्ष की आय सहायता।', benefits:'₹6,000 per year in 3 instalments of ₹2,000 each via DBT.', benefitsHindi:'₹6,000 प्रतिवर्ष, 3 किस्तों में ₹2,000 प्रत्येक, डीबीटी के माध्यम से।', applicationUrl:'https://pmkisan.gov.in/', criteria:{minAge:18,maxAge:100,gender:'Any',maxAnnualIncome:0,targetOccupations:['Farmer'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Land Records','Bank Account Details'] },
+  { title:'PM Fasal Bima Yojana (PMFBY)', titleHindi:'प्रधानमंत्री फसल बीमा योजना', department:'Ministry of Agriculture & Farmers Welfare', category:'Agriculture', description:'Crop insurance scheme covering yield losses due to natural calamities, pests, and diseases.', descriptionHindi:'प्राकृतिक आपदाओं, कीटों और रोगों से फसल हानि को कवर करने वाली फसल बीमा योजना।', benefits:'Insurance cover and financial support for crop loss at nominal premium.', benefitsHindi:'नाममात्र प्रीमियम पर फसल हानि के लिए बीमा कवर और वित्तीय सहायता।', applicationUrl:'https://pmfby.gov.in/', criteria:{minAge:18,maxAge:70,gender:'Any',maxAnnualIncome:0,targetOccupations:['Farmer'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Land Records','Bank Account','Sowing Certificate'] },
+  { title:'PM Krishi Sinchayee Yojana (PMKSY)', titleHindi:'प्रधानमंत्री कृषि सिंचाई योजना', department:'Ministry of Agriculture & Farmers Welfare', category:'Agriculture', description:'Ensures access to protective irrigation with "Har Khet Ko Paani" and "More Crop Per Drop".', descriptionHindi:'"हर खेत को पानी" और "प्रति बूंद अधिक फसल" के साथ सुरक्षात्मक सिंचाई सुनिश्चित करती है।', benefits:'Subsidies for micro-irrigation, drip and sprinkler systems.', benefitsHindi:'सूक्ष्म सिंचाई, ड्रिप और स्प्रिंकलर सिस्टम के लिए सब्सिडी।', applicationUrl:'https://pmksy.gov.in/', criteria:{minAge:18,maxAge:70,gender:'Any',maxAnnualIncome:0,targetOccupations:['Farmer'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Land Records','Bank Account'] },
+  { title:'Kisan Credit Card (KCC)', titleHindi:'किसान क्रेडिट कार्ड', department:'Ministry of Agriculture & Farmers Welfare', category:'Agriculture', description:'Provides affordable credit to farmers for agricultural and allied activities.', descriptionHindi:'कृषि और संबद्ध गतिविधियों के लिए किसानों को सस्ता ऋण प्रदान करता है।', benefits:'Credit up to ₹3 lakh at subsidized interest rate of 4%.', benefitsHindi:'4% सब्सिडी ब्याज दर पर ₹3 लाख तक का ऋण।', applicationUrl:'https://pmkisan.gov.in/', criteria:{minAge:18,maxAge:75,gender:'Any',maxAnnualIncome:0,targetOccupations:['Farmer'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Land Records','Passport Photo','Bank Account'] },
+  { title:'Paramparagat Krishi Vikas Yojana (PKVY)', titleHindi:'परम्परागत कृषि विकास योजना', department:'Ministry of Agriculture & Farmers Welfare', category:'Agriculture', description:'Promotes organic farming through cluster-based approach.', descriptionHindi:'क्लस्टर आधारित दृष्टिकोण के माध्यम से जैविक खेती को बढ़ावा देती है।', benefits:'₹50,000 per hectare for 3 years for organic farming inputs.', benefitsHindi:'जैविक खेती इनपुट के लिए 3 वर्षों में ₹50,000 प्रति हेक्टेयर।', applicationUrl:'https://pgsindia-ncof.gov.in/', criteria:{minAge:18,maxAge:70,gender:'Any',maxAnnualIncome:0,targetOccupations:['Farmer'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Land Records','Bank Account'] },
+  { title:'Soil Health Card Scheme', titleHindi:'मृदा स्वास्थ्य कार्ड योजना', department:'Ministry of Agriculture & Farmers Welfare', category:'Agriculture', description:'Provides soil health cards with crop-wise nutrient recommendations.', descriptionHindi:'फसल-वार पोषक तत्व सिफारिशों के साथ मृदा स्वास्थ्य कार्ड प्रदान करती है।', benefits:'Free soil testing and recommendations for balanced fertilizer use.', benefitsHindi:'संतुलित उर्वरक उपयोग के लिए मुफ्त मृदा परीक्षण और सिफारिशें।', applicationUrl:'https://soilhealth.dac.gov.in/', criteria:{minAge:18,maxAge:80,gender:'Any',maxAnnualIncome:0,targetOccupations:['Farmer'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Land Records'] },
+  { title:'e-NAM (National Agriculture Market)', titleHindi:'ई-नैम (राष्ट्रीय कृषि बाजार)', department:'Ministry of Agriculture & Farmers Welfare', category:'Agriculture', description:'Online trading portal for agricultural produce across India.', descriptionHindi:'भारत भर में कृषि उपज के लिए ऑनलाइन ट्रेडिंग पोर्टल।', benefits:'Transparent price discovery and online payment for produce.', benefitsHindi:'उपज के लिए पारदर्शी मूल्य खोज और ऑनलाइन भुगतान।', applicationUrl:'https://enam.gov.in/', criteria:{minAge:18,maxAge:80,gender:'Any',maxAnnualIncome:0,targetOccupations:['Farmer'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Bank Account','Mobile Number'] },
+  { title:'GOBAR-DHAN Scheme', titleHindi:'गोबर-धन योजना', department:'Ministry of Jal Shakti', category:'Agriculture', description:'Galvanizing Organic Bio-Agro Resources — converts cattle dung and agricultural waste into biogas and bio-CNG.', descriptionHindi:'पशु गोबर और कृषि अपशिष्ट को बायोगैस और बायो-सीएनजी में परिवर्तित करती है।', benefits:'Financial assistance for setting up biogas plants.', benefitsHindi:'बायोगैस संयंत्र स्थापित करने के लिए वित्तीय सहायता।', applicationUrl:'https://sbm.gov.in/gbdw20/', criteria:{minAge:18,maxAge:70,gender:'Any',maxAnnualIncome:0,targetOccupations:['Farmer'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Land Records','Bank Account'] },
+  { title:'Sub-Mission on Agricultural Mechanization (SMAM)', titleHindi:'कृषि मशीनीकरण पर उप-मिशन', department:'Ministry of Agriculture & Farmers Welfare', category:'Agriculture', description:'Promotes farm mechanization through subsidized machinery.', descriptionHindi:'सब्सिडी वाली मशीनरी के माध्यम से कृषि मशीनीकरण को बढ़ावा देती है।', benefits:'40-80% subsidy on farm equipment and machinery.', benefitsHindi:'कृषि उपकरणों और मशीनरी पर 40-80% सब्सिडी।', applicationUrl:'https://agrimachinery.nic.in/', criteria:{minAge:18,maxAge:70,gender:'Any',maxAnnualIncome:0,targetOccupations:['Farmer'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Land Records','Bank Account','Quotation of Equipment'] },
+  { title:'Agri-Clinics and Agri-Business Centres Scheme', titleHindi:'कृषि-क्लिनिक और कृषि-व्यवसाय केंद्र योजना', department:'Ministry of Agriculture & Farmers Welfare', category:'Agriculture', description:'Supports agriculture graduates to set up agri-clinics providing farm advisory services.', descriptionHindi:'कृषि स्नातकों को कृषि-क्लिनिक स्थापित करने में सहायता करती है।', benefits:'Subsidy up to 44% on project cost and free training.', benefitsHindi:'परियोजना लागत पर 44% तक सब्सिडी और मुफ्त प्रशिक्षण।', applicationUrl:'https://www.manage.gov.in/acabc.asp', criteria:{minAge:18,maxAge:60,gender:'Any',maxAnnualIncome:0,targetOccupations:['Farmer','Student','Business'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Degree Certificate','Project Report','Bank Account'] },
+
+  // ── HEALTHCARE (8) ────────────────────────────────────────────
+  { title:'Ayushman Bharat – PM-JAY', titleHindi:'आयुष्मान भारत – पीएमजेएवाई', department:'National Health Authority', category:'Healthcare', description:'World\'s largest publicly funded health assurance scheme providing ₹5 lakh cover.', descriptionHindi:'विश्व की सबसे बड़ी सार्वजनिक स्वास्थ्य आश्वासन योजना, ₹5 लाख कवर।', benefits:'₹5 lakh health cover per family per year, cashless treatment at empanelled hospitals.', benefitsHindi:'परिवार प्रति वर्ष ₹5 लाख स्वास्थ्य कवर, सूचीबद्ध अस्पतालों में कैशलेस उपचार।', applicationUrl:'https://nha.gov.in/PM-JAY', criteria:{minAge:0,maxAge:120,gender:'Any',maxAnnualIncome:500000,targetOccupations:[],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Ration Card','Ayushman Card'] },
+  { title:'National Health Mission (NHM)', titleHindi:'राष्ट्रीय स्वास्थ्य मिशन', department:'Ministry of Health & Family Welfare', category:'Healthcare', description:'Strengthens healthcare delivery across rural and urban India.', descriptionHindi:'ग्रामीण और शहरी भारत में स्वास्थ्य सेवा वितरण को मजबूत करती है।', benefits:'Free healthcare services at public health centres.', benefitsHindi:'सार्वजनिक स्वास्थ्य केंद्रों पर मुफ्त स्वास्थ्य सेवाएं।', applicationUrl:'https://nhm.gov.in/', criteria:{minAge:0,maxAge:120,gender:'Any',maxAnnualIncome:0,targetOccupations:[],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card'] },
+  { title:'Pradhan Mantri Surakshit Matritva Abhiyan', titleHindi:'प्रधानमंत्री सुरक्षित मातृत्व अभियान', department:'Ministry of Health & Family Welfare', category:'Healthcare', description:'Free antenatal check-ups for pregnant women on 9th of every month.', descriptionHindi:'हर महीने की 9 तारीख को गर्भवती महिलाओं की मुफ्त प्रसवपूर्व जांच।', benefits:'Free comprehensive antenatal care including blood tests and ultrasound.', benefitsHindi:'रक्त परीक्षण और अल्ट्रासाउंड सहित मुफ्त व्यापक प्रसवपूर्व देखभाल।', applicationUrl:'https://pmsma.nhp.gov.in/', criteria:{minAge:18,maxAge:45,gender:'Female',maxAnnualIncome:0,targetOccupations:[],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','MCP Card'] },
+  { title:'Janani Suraksha Yojana (JSY)', titleHindi:'जननी सुरक्षा योजना', department:'Ministry of Health & Family Welfare', category:'Healthcare', description:'Cash assistance for institutional delivery to reduce maternal and neonatal mortality.', descriptionHindi:'मातृ और नवजात मृत्यु दर कम करने के लिए संस्थागत प्रसव हेतु नकद सहायता।', benefits:'₹1,400 in rural and ₹1,000 in urban areas for institutional delivery.', benefitsHindi:'संस्थागत प्रसव के लिए ग्रामीण में ₹1,400 और शहरी में ₹1,000।', applicationUrl:'https://nhm.gov.in/', criteria:{minAge:18,maxAge:50,gender:'Female',maxAnnualIncome:150000,targetOccupations:[],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','MCP Card','BPL Card','Bank Account'] },
+  { title:'Janani Shishu Suraksha Karyakram (JSSK)', titleHindi:'जननी शिशु सुरक्षा कार्यक्रम', department:'Ministry of Health & Family Welfare', category:'Healthcare', description:'Free and cashless services for pregnant women and sick newborns up to 1 year.', descriptionHindi:'गर्भवती महिलाओं और 1 वर्ष तक के बीमार नवजातों के लिए मुफ्त और कैशलेस सेवाएं।', benefits:'Free delivery, C-section, medicines, diagnostics, diet and transport.', benefitsHindi:'मुफ्त प्रसव, सी-सेक्शन, दवाइयां, जांच, आहार और परिवहन।', applicationUrl:'https://nhm.gov.in/', criteria:{minAge:0,maxAge:45,gender:'Female',maxAnnualIncome:0,targetOccupations:[],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','MCP Card'] },
+  { title:'Mission Indradhanush', titleHindi:'मिशन इंद्रधनुष', department:'Ministry of Health & Family Welfare', category:'Healthcare', description:'Full immunization for children under 2 years and pregnant women.', descriptionHindi:'2 वर्ष से कम आयु के बच्चों और गर्भवती महिलाओं के लिए पूर्ण टीकाकरण।', benefits:'Free vaccination against 12 preventable diseases.', benefitsHindi:'12 रोकथाम योग्य बीमारियों के खिलाफ मुफ्त टीकाकरण।', applicationUrl:'https://nhm.gov.in/index4.php?lang=1&level=0&linkid=453&lid=704', criteria:{minAge:0,maxAge:5,gender:'Any',maxAnnualIncome:0,targetOccupations:[],state:'All-India',casteCategories:ALL}, requiredDocuments:['Birth Certificate','Immunization Card'] },
+  { title:'Nikshay Poshan Yojana', titleHindi:'निक्षय पोषण योजना', department:'Ministry of Health & Family Welfare', category:'Healthcare', description:'Nutritional support to TB patients undergoing treatment.', descriptionHindi:'उपचाराधीन टीबी रोगियों को पोषण सहायता।', benefits:'₹500 per month nutritional support during TB treatment.', benefitsHindi:'टीबी उपचार के दौरान ₹500 प्रतिमाह पोषण सहायता।', applicationUrl:'https://nikshay.in/', criteria:{minAge:0,maxAge:120,gender:'Any',maxAnnualIncome:0,targetOccupations:[],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','TB Treatment Card','Bank Account'] },
+  { title:'Mahatma Jyotirao Phule Jan Arogya Yojana', titleHindi:'महात्मा ज्योतिराव फुले जन आरोग्य योजना', department:'Government of Maharashtra', category:'Healthcare', description:'Cashless health insurance for Maharashtra residents covering 1,000+ surgeries.', descriptionHindi:'महाराष्ट्र निवासियों के लिए 1,000+ सर्जरी कवर करने वाला कैशलेस स्वास्थ्य बीमा।', benefits:'₹1.5 lakh cover per family for listed medical procedures.', benefitsHindi:'सूचीबद्ध चिकित्सा प्रक्रियाओं के लिए प्रति परिवार ₹1.5 लाख कवर।', applicationUrl:'https://www.jeevandayee.gov.in/', criteria:{minAge:0,maxAge:120,gender:'Any',maxAnnualIncome:100000,targetOccupations:[],state:'Maharashtra',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Yellow/Orange Ration Card','Domicile Certificate'] },
+
+  // ── EDUCATION & SCHOLARSHIPS (12) ─────────────────────────────
+  { title:'Post-Matric Scholarship for SC Students', titleHindi:'अनुसूचित जाति छात्रों के लिए पोस्ट-मैट्रिक छात्रवृत्ति', department:'Ministry of Social Justice & Empowerment', category:'Education', description:'Scholarship for SC students in post-matriculation courses.', descriptionHindi:'पोस्ट-मैट्रिक पाठ्यक्रमों में अनुसूचित जाति के छात्रों के लिए छात्रवृत्ति।', benefits:'Maintenance allowance, tuition fees, and book grants.', benefitsHindi:'रखरखाव भत्ता, शिक्षण शुल्क और पुस्तक अनुदान।', applicationUrl:'https://scholarships.gov.in/', criteria:{minAge:16,maxAge:35,gender:'Any',maxAnnualIncome:250000,targetOccupations:['Student'],state:'All-India',casteCategories:['SC']}, requiredDocuments:['Aadhaar Card','Caste Certificate','Income Certificate','Marksheet','Bank Account'] },
+  { title:'Post-Matric Scholarship for ST Students', titleHindi:'अनुसूचित जनजाति छात्रों के लिए पोस्ट-मैट्रिक छात्रवृत्ति', department:'Ministry of Tribal Affairs', category:'Education', description:'Scholarship for ST students in post-matriculation courses.', descriptionHindi:'पोस्ट-मैट्रिक पाठ्यक्रमों में अनुसूचित जनजाति के छात्रों के लिए छात्रवृत्ति।', benefits:'Full tuition fee, maintenance allowance, book grant.', benefitsHindi:'पूर्ण शिक्षण शुल्क, रखरखाव भत्ता, पुस्तक अनुदान।', applicationUrl:'https://scholarships.gov.in/', criteria:{minAge:16,maxAge:35,gender:'Any',maxAnnualIncome:250000,targetOccupations:['Student'],state:'All-India',casteCategories:['ST']}, requiredDocuments:['Aadhaar Card','Caste Certificate','Income Certificate','Marksheet','Bank Account'] },
+  { title:'Post-Matric Scholarship for OBC Students', titleHindi:'ओबीसी छात्रों के लिए पोस्ट-मैट्रिक छात्रवृत्ति', department:'Ministry of Social Justice & Empowerment', category:'Education', description:'Scholarship for OBC students in post-matriculation courses.', descriptionHindi:'पोस्ट-मैट्रिक पाठ्यक्रमों में ओबीसी छात्रों के लिए छात्रवृत्ति।', benefits:'Maintenance allowance, tuition fee reimbursement.', benefitsHindi:'रखरखाव भत्ता, शिक्षण शुल्क प्रतिपूर्ति।', applicationUrl:'https://scholarships.gov.in/', criteria:{minAge:16,maxAge:35,gender:'Any',maxAnnualIncome:100000,targetOccupations:['Student'],state:'All-India',casteCategories:['OBC']}, requiredDocuments:['Aadhaar Card','Caste Certificate','Income Certificate','Marksheet','Bank Account'] },
+  { title:'Pre-Matric Scholarship for Minorities', titleHindi:'अल्पसंख्यकों के लिए प्री-मैट्रिक छात्रवृत्ति', department:'Ministry of Minority Affairs', category:'Education', description:'Scholarship for minority students in classes 1-10.', descriptionHindi:'कक्षा 1-10 में अल्पसंख्यक छात्रों के लिए छात्रवृत्ति।', benefits:'Admission fee, tuition fee, and maintenance allowance.', benefitsHindi:'प्रवेश शुल्क, शिक्षण शुल्क और रखरखाव भत्ता।', applicationUrl:'https://scholarships.gov.in/', criteria:{minAge:5,maxAge:16,gender:'Any',maxAnnualIncome:100000,targetOccupations:['Student'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Income Certificate','School Certificate','Self-Declaration of Minority'] },
+  { title:'National Means-cum-Merit Scholarship (NMMS)', titleHindi:'राष्ट्रीय साधन-सह-मेधा छात्रवृत्ति', department:'Ministry of Education', category:'Education', description:'Scholarship for meritorious students from economically weaker sections in class 8.', descriptionHindi:'कक्षा 8 में आर्थिक रूप से कमजोर वर्गों के मेधावी छात्रों के लिए छात्रवृत्ति।', benefits:'₹12,000 per annum from class 9 to 12.', benefitsHindi:'कक्षा 9 से 12 तक ₹12,000 प्रतिवर्ष।', applicationUrl:'https://scholarships.gov.in/', criteria:{minAge:13,maxAge:18,gender:'Any',maxAnnualIncome:350000,targetOccupations:['Student'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Income Certificate','Marksheet','Bank Account'] },
+  { title:'PM Young Achievers Scholarship (PM-YASASVI)', titleHindi:'पीएम यशस्वी छात्रवृत्ति', department:'Ministry of Social Justice & Empowerment', category:'Education', description:'Scholarship for OBC, EBC, and DNT students in top schools.', descriptionHindi:'शीर्ष स्कूलों में ओबीसी, ईबीसी और डीएनटी छात्रों के लिए छात्रवृत्ति।', benefits:'₹75,000 to ₹1,25,000 per annum for Class 9-12.', benefitsHindi:'कक्षा 9-12 के लिए ₹75,000 से ₹1,25,000 प्रतिवर्ष।', applicationUrl:'https://yet.nta.ac.in/', criteria:{minAge:14,maxAge:18,gender:'Any',maxAnnualIncome:250000,targetOccupations:['Student'],state:'All-India',casteCategories:['OBC','SC','ST']}, requiredDocuments:['Aadhaar Card','Income Certificate','Caste Certificate','Marksheet'] },
+  { title:'Central Sector Scholarship for College & University Students', titleHindi:'कॉलेज और विश्वविद्यालय छात्रों के लिए केंद्रीय क्षेत्र छात्रवृत्ति', department:'Ministry of Education', category:'Education', description:'Merit-based scholarship for students from families with income below ₹8 lakh.', descriptionHindi:'₹8 लाख से कम आय वाले परिवारों के छात्रों के लिए मेधा-आधारित छात्रवृत्ति।', benefits:'₹10,000-₹20,000 per annum for graduation and post-graduation.', benefitsHindi:'स्नातक और स्नातकोत्तर के लिए ₹10,000-₹20,000 प्रतिवर्ष।', applicationUrl:'https://scholarships.gov.in/', criteria:{minAge:17,maxAge:30,gender:'Any',maxAnnualIncome:800000,targetOccupations:['Student'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Income Certificate','Board Marksheet','College Admission Letter','Bank Account'] },
+  { title:'Pragati Scholarship for Girls (AICTE)', titleHindi:'प्रगति छात्रवृत्ति (एआईसीटीई)', department:'AICTE, Ministry of Education', category:'Education', description:'Scholarship for girls pursuing technical education (degree/diploma).', descriptionHindi:'तकनीकी शिक्षा (डिग्री/डिप्लोमा) प्राप्त करने वाली लड़कियों के लिए छात्रवृत्ति।', benefits:'₹50,000 per annum (tuition fee waiver + ₹2,000/month incidentals).', benefitsHindi:'₹50,000 प्रतिवर्ष (शिक्षण शुल्क माफी + ₹2,000/माह)।', applicationUrl:'https://www.aicte-india.org/schemes/students-development-schemes/Pragati', criteria:{minAge:17,maxAge:30,gender:'Female',maxAnnualIncome:800000,targetOccupations:['Student'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Income Certificate','Admission Letter','Marksheet','Bank Account'] },
+  { title:'Saksham Scholarship for Specially-Abled (AICTE)', titleHindi:'सक्षम छात्रवृत्ति (एआईसीटीई)', department:'AICTE, Ministry of Education', category:'Education', description:'Scholarship for differently-abled students in technical education.', descriptionHindi:'तकनीकी शिक्षा में दिव्यांग छात्रों के लिए छात्रवृत्ति।', benefits:'₹50,000 per annum including tuition fee waiver.', benefitsHindi:'शिक्षण शुल्क माफी सहित ₹50,000 प्रतिवर्ष।', applicationUrl:'https://www.aicte-india.org/schemes/students-development-schemes/Saksham', criteria:{minAge:17,maxAge:30,gender:'Any',maxAnnualIncome:800000,targetOccupations:['Student'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Disability Certificate','Income Certificate','Admission Letter'] },
+  { title:'Begum Hazrat Mahal National Scholarship', titleHindi:'बेगम हज़रत महल राष्ट्रीय छात्रवृत्ति', department:'Maulana Azad Education Foundation', category:'Education', description:'Scholarship for meritorious girls of minority communities in classes 9-12.', descriptionHindi:'कक्षा 9-12 में अल्पसंख्यक समुदायों की मेधावी लड़कियों के लिए छात्रवृत्ति।', benefits:'₹5,000 for class 9-10 and ₹6,000 for class 11-12.', benefitsHindi:'कक्षा 9-10 के लिए ₹5,000 और कक्षा 11-12 के लिए ₹6,000।', applicationUrl:'https://bhmnsmaef.org/', criteria:{minAge:14,maxAge:20,gender:'Female',maxAnnualIncome:200000,targetOccupations:['Student'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Minority Certificate','Income Certificate','Marksheet'] },
+  { title:'Ishan Uday Scholarship (NER)', titleHindi:'ईशान उदय छात्रवृत्ति (पूर्वोत्तर)', department:'UGC, Ministry of Education', category:'Education', description:'Scholarship for students from North Eastern Region pursuing higher education.', descriptionHindi:'उच्च शिक्षा प्राप्त करने वाले पूर्वोत्तर क्षेत्र के छात्रों के लिए छात्रवृत्ति।', benefits:'₹5,400/month for general courses and ₹7,800/month for professional courses.', benefitsHindi:'सामान्य पाठ्यक्रमों के लिए ₹5,400/माह और व्यावसायिक पाठ्यक्रमों के लिए ₹7,800/माह।', applicationUrl:'https://scholarships.gov.in/', criteria:{minAge:17,maxAge:30,gender:'Any',maxAnnualIncome:450000,targetOccupations:['Student'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Domicile of NER State','Income Certificate','Admission Letter'] },
+
+  // ── WOMEN & CHILD (10) ────────────────────────────────────────
+  { title:'Sukanya Samriddhi Yojana (SSY)', titleHindi:'सुकन्या समृद्धि योजना', department:'Ministry of Finance', category:'Women & Child', description:'Small savings scheme for girl child under Beti Bachao Beti Padhao.', descriptionHindi:'बेटी बचाओ बेटी पढ़ाओ के तहत बालिका के लिए लघु बचत योजना।', benefits:'Attractive interest rate (~8%), tax-free maturity, Section 80C benefits.', benefitsHindi:'आकर्षक ब्याज दर (~8%), कर-मुक्त परिपक्वता, धारा 80C लाभ।', applicationUrl:'https://www.nsiindia.gov.in/', criteria:{minAge:0,maxAge:10,gender:'Female',maxAnnualIncome:0,targetOccupations:[],state:'All-India',casteCategories:ALL}, requiredDocuments:['Birth Certificate of Girl Child','Guardian Aadhaar','KYC Documents'] },
+  { title:'PM Matru Vandana Yojana (PMMVY)', titleHindi:'प्रधानमंत्री मातृ वंदना योजना', department:'Ministry of Women & Child Development', category:'Women & Child', description:'Cash incentive for pregnant and lactating women for first live birth.', descriptionHindi:'पहले जीवित जन्म के लिए गर्भवती और स्तनपान कराने वाली महिलाओं को नकद प्रोत्साहन।', benefits:'₹5,000 in three instalments for first birth; ₹6,000 for second girl child.', benefitsHindi:'पहले जन्म के लिए तीन किस्तों में ₹5,000; दूसरी बालिका के लिए ₹6,000।', applicationUrl:'https://pmmvy.wcd.gov.in/', criteria:{minAge:18,maxAge:45,gender:'Female',maxAnnualIncome:0,targetOccupations:[],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','MCP Card','Bank Account','Pregnancy Registration'] },
+  { title:'Beti Bachao Beti Padhao', titleHindi:'बेटी बचाओ बेटी पढ़ाओ', department:'Ministry of Women & Child Development', category:'Women & Child', description:'National campaign to address declining child sex ratio and empower the girl child.', descriptionHindi:'घटते बाल लिंगानुपात को संबोधित करने और बालिका सशक्तिकरण का राष्ट्रीय अभियान।', benefits:'Awareness programs, institutional support for girl child education and survival.', benefitsHindi:'जागरूकता कार्यक्रम, बालिका शिक्षा और अस्तित्व के लिए संस्थागत सहायता।', applicationUrl:'https://wcd.nic.in/bbbp-schemes', criteria:{minAge:0,maxAge:18,gender:'Female',maxAnnualIncome:0,targetOccupations:[],state:'All-India',casteCategories:ALL}, requiredDocuments:['Birth Certificate','Aadhaar Card of Parent'] },
+  { title:'Mahila Samman Savings Certificate', titleHindi:'महिला सम्मान बचत प्रमाणपत्र', department:'Ministry of Finance', category:'Women & Child', description:'Fixed deposit scheme for women and girls at 7.5% interest rate.', descriptionHindi:'7.5% ब्याज दर पर महिलाओं और लड़कियों के लिए सावधि जमा योजना।', benefits:'7.5% annual interest, 2-year tenure, partial withdrawal allowed.', benefitsHindi:'7.5% वार्षिक ब्याज, 2 वर्ष की अवधि, आंशिक निकासी अनुमत।', applicationUrl:'https://www.indiapost.gov.in/', criteria:{minAge:0,maxAge:120,gender:'Female',maxAnnualIncome:0,targetOccupations:[],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','PAN Card','Bank/Post Office Account'] },
+  { title:'PM Ujjwala Yojana', titleHindi:'प्रधानमंत्री उज्ज्वला योजना', department:'Ministry of Petroleum & Natural Gas', category:'Women & Child', description:'Free LPG connection for women from BPL households.', descriptionHindi:'बीपीएल परिवारों की महिलाओं को मुफ्त एलपीजी कनेक्शन।', benefits:'₹1,600 financial support for free LPG connection and first refill.', benefitsHindi:'मुफ्त एलपीजी कनेक्शन और पहले रिफिल के लिए ₹1,600 वित्तीय सहायता।', applicationUrl:'https://www.pmuy.gov.in/', criteria:{minAge:18,maxAge:80,gender:'Female',maxAnnualIncome:100000,targetOccupations:[],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','BPL Ration Card','Bank Account'] },
+  { title:'Majhi Ladki Bahin Yojana', titleHindi:'माझी लाडकी बहिण योजना', department:'Government of Maharashtra', category:'Women & Child', description:'Monthly cash transfer for women in Maharashtra.', descriptionHindi:'महाराष्ट्र में महिलाओं के लिए मासिक नकद हस्तांतरण।', benefits:'₹1,500 per month for eligible women.', benefitsHindi:'पात्र महिलाओं के लिए ₹1,500 प्रतिमाह।', applicationUrl:'https://womenchild.maharashtra.gov.in/', criteria:{minAge:21,maxAge:65,gender:'Female',maxAnnualIncome:250000,targetOccupations:[],state:'Maharashtra',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Domicile Certificate','Income Certificate','Bank Account'] },
+  { title:'Mukhyamantri Kanya Sumangala Yojana', titleHindi:'मुख्यमंत्री कन्या सुमंगला योजना', department:'Government of Uttar Pradesh', category:'Women & Child', description:'Financial support for girl child at different stages from birth to graduation.', descriptionHindi:'जन्म से स्नातक तक विभिन्न चरणों में बालिका को वित्तीय सहायता।', benefits:'Total ₹25,000 in 6 instalments from birth to graduation.', benefitsHindi:'जन्म से स्नातक तक 6 किस्तों में कुल ₹25,000।', applicationUrl:'https://mksy.up.gov.in/', criteria:{minAge:0,maxAge:25,gender:'Female',maxAnnualIncome:300000,targetOccupations:[],state:'Uttar Pradesh',casteCategories:ALL}, requiredDocuments:['Birth Certificate','Aadhaar Card','Income Certificate','Bank Account'] },
+  { title:'Ladli Laxmi Yojana', titleHindi:'लाड़ली लक्ष्मी योजना', department:'Government of Madhya Pradesh', category:'Women & Child', description:'Assurance certificates for girl child providing ₹1.43 lakh over time.', descriptionHindi:'बालिका के लिए समय के साथ ₹1.43 लाख प्रदान करने वाले आश्वासन प्रमाणपत्र।', benefits:'₹1,43,000 in phased payouts linked to education milestones.', benefitsHindi:'शिक्षा मील के पत्थरों से जुड़े चरणबद्ध भुगतान में ₹1,43,000।', applicationUrl:'https://ladlilaxmi.mp.gov.in/', criteria:{minAge:0,maxAge:18,gender:'Female',maxAnnualIncome:0,targetOccupations:[],state:'Madhya Pradesh',casteCategories:ALL}, requiredDocuments:['Birth Certificate','Aadhaar Card','Family Photo','Bank Account'] },
+  { title:'Lakhpati Didi Scheme', titleHindi:'लखपति दीदी योजना', department:'Ministry of Rural Development', category:'Women & Child', description:'Aims to make 2 crore rural women lakhpatis through SHG skill training.', descriptionHindi:'एसएचजी कौशल प्रशिक्षण के माध्यम से 2 करोड़ ग्रामीण महिलाओं को लखपति बनाने का लक्ष्य।', benefits:'Skill training, financial literacy, and market linkage support.', benefitsHindi:'कौशल प्रशिक्षण, वित्तीय साक्षरता और बाजार लिंकेज सहायता।', applicationUrl:'https://nrlm.gov.in/', criteria:{minAge:18,maxAge:60,gender:'Female',maxAnnualIncome:300000,targetOccupations:[],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','SHG Membership','Bank Account'] },
+  { title:'Working Women Hostel Scheme', titleHindi:'कामकाजी महिला हॉस्टल योजना', department:'Ministry of Women & Child Development', category:'Women & Child', description:'Safe and affordable hostel accommodation for working women.', descriptionHindi:'कामकाजी महिलाओं के लिए सुरक्षित और सस्ती हॉस्टल आवास।', benefits:'Subsidized hostel facilities with day-care for children.', benefitsHindi:'बच्चों के लिए डे-केयर के साथ रियायती हॉस्टल सुविधाएं।', applicationUrl:'https://wcd.nic.in/', criteria:{minAge:18,maxAge:60,gender:'Female',maxAnnualIncome:0,targetOccupations:['Salaried','Business','Student'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Employment Proof','Income Certificate'] },
+
+  // ── FINANCIAL & MSME (10) ─────────────────────────────────────
+  { title:'PM Mudra Yojana (PMMY)', titleHindi:'प्रधानमंत्री मुद्रा योजना', department:'Ministry of Finance', category:'Financial', description:'Collateral-free loans for micro and small enterprises.', descriptionHindi:'सूक्ष्म और लघु उद्यमों के लिए बिना गारंटी ऋण।', benefits:'Loans up to ₹20 lakh under Shishu, Kishore, and Tarun categories.', benefitsHindi:'शिशु, किशोर और तरुण श्रेणियों में ₹20 लाख तक का ऋण।', applicationUrl:'https://www.mudra.org.in/', criteria:{minAge:18,maxAge:65,gender:'Any',maxAnnualIncome:0,targetOccupations:['Business','Self-employed'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','PAN Card','Business Plan','Bank Account'] },
+  { title:'Stand-Up India Scheme', titleHindi:'स्टैंड-अप इंडिया योजना', department:'Ministry of Finance', category:'Financial', description:'Bank loans for SC/ST and women entrepreneurs for greenfield enterprises.', descriptionHindi:'एससी/एसटी और महिला उद्यमियों के लिए ग्रीनफील्ड उद्यम हेतु बैंक ऋण।', benefits:'Loans between ₹10 lakh and ₹1 crore.', benefitsHindi:'₹10 लाख और ₹1 करोड़ के बीच ऋण।', applicationUrl:'https://www.standupmitra.in/', criteria:{minAge:18,maxAge:65,gender:'Any',maxAnnualIncome:0,targetOccupations:['Business'],state:'All-India',casteCategories:['SC','ST']}, requiredDocuments:['Aadhaar Card','PAN Card','Business Plan','Caste Certificate'] },
+  { title:'PM SVANidhi (Street Vendors)', titleHindi:'पीएम स्वनिधि', department:'Ministry of Housing & Urban Affairs', category:'Financial', description:'Micro-credit facility for street vendors affected by COVID-19.', descriptionHindi:'कोविड-19 से प्रभावित स्ट्रीट वेंडरों के लिए सूक्ष्म-ऋण सुविधा।', benefits:'Working capital loan of ₹10,000-₹50,000 with interest subsidy.', benefitsHindi:'ब्याज सब्सिडी के साथ ₹10,000-₹50,000 का कार्यशील पूंजी ऋण।', applicationUrl:'https://pmsvanidhi.mohua.gov.in/', criteria:{minAge:18,maxAge:65,gender:'Any',maxAnnualIncome:0,targetOccupations:['Business'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Vending Certificate','Bank Account'] },
+  { title:'PM Vishwakarma Kaushal Samman', titleHindi:'पीएम विश्वकर्मा कौशल सम्मान', department:'Ministry of MSME', category:'Financial', description:'Scheme for traditional artisans and craftspeople of 18 trades.', descriptionHindi:'18 पारंपरिक व्यवसायों के कारीगरों के लिए योजना।', benefits:'Skill training, ₹15,000 toolkit incentive, collateral-free credit up to ₹3 lakh.', benefitsHindi:'कौशल प्रशिक्षण, ₹15,000 टूलकिट प्रोत्साहन, ₹3 लाख तक बिना गारंटी ऋण।', applicationUrl:'https://pmvishwakarma.gov.in/', criteria:{minAge:18,maxAge:60,gender:'Any',maxAnnualIncome:0,targetOccupations:['Business','Self-employed'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Trade Proof','Bank Account'] },
+  { title:'CGTMSE (Credit Guarantee Fund Trust)', titleHindi:'सीजीटीएमएसई (ऋण गारंटी निधि)', department:'Ministry of MSME', category:'Financial', description:'Collateral-free credit guarantee for MSMEs.', descriptionHindi:'एमएसएमई के लिए बिना गारंटी ऋण गारंटी।', benefits:'Credit guarantee cover up to ₹5 crore for MSMEs without collateral.', benefitsHindi:'बिना गारंटी एमएसएमई के लिए ₹5 करोड़ तक का ऋण गारंटी कवर।', applicationUrl:'https://www.cgtmse.in/', criteria:{minAge:18,maxAge:65,gender:'Any',maxAnnualIncome:0,targetOccupations:['Business','Self-employed'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','PAN Card','Business Registration','Bank Account'] },
+  { title:'PM Employment Generation Programme (PMEGP)', titleHindi:'पीएम रोजगार सृजन कार्यक्रम', department:'Ministry of MSME', category:'Financial', description:'Credit-linked subsidy for setting up micro-enterprises.', descriptionHindi:'सूक्ष्म उद्यम स्थापित करने के लिए क्रेडिट-लिंक्ड सब्सिडी।', benefits:'15-35% subsidy on project cost for new enterprises.', benefitsHindi:'नए उद्यमों के लिए परियोजना लागत पर 15-35% सब्सिडी।', applicationUrl:'https://www.kviconline.gov.in/pmegpeportal/', criteria:{minAge:18,maxAge:65,gender:'Any',maxAnnualIncome:0,targetOccupations:['Business','Unemployed'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Project Report','Education Certificate','Bank Account'] },
+  { title:'PM Jan Dhan Yojana (PMJDY)', titleHindi:'प्रधानमंत्री जन धन योजना', department:'Ministry of Finance', category:'Financial', description:'Financial inclusion program offering zero-balance bank accounts.', descriptionHindi:'शून्य-बैलेंस बैंक खाते प्रदान करने वाला वित्तीय समावेशन कार्यक्रम।', benefits:'Zero-balance account, RuPay debit card, ₹2 lakh accident insurance.', benefitsHindi:'शून्य-बैलेंस खाता, RuPay डेबिट कार्ड, ₹2 लाख दुर्घटना बीमा।', applicationUrl:'https://pmjdy.gov.in/', criteria:{minAge:10,maxAge:120,gender:'Any',maxAnnualIncome:0,targetOccupations:[],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Passport Photo'] },
+  { title:'Atal Pension Yojana (APY)', titleHindi:'अटल पेंशन योजना', department:'Ministry of Finance', category:'Financial', description:'Guaranteed pension for unorganized sector workers.', descriptionHindi:'असंगठित क्षेत्र के श्रमिकों के लिए गारंटीकृत पेंशन।', benefits:'₹1,000-₹5,000 per month guaranteed pension after age 60.', benefitsHindi:'60 वर्ष बाद ₹1,000-₹5,000 प्रतिमाह गारंटीकृत पेंशन।', applicationUrl:'https://npscra.nsdl.co.in/scheme-details.php', criteria:{minAge:18,maxAge:40,gender:'Any',maxAnnualIncome:0,targetOccupations:['Unemployed','Farmer','Business','Salaried'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Bank Account','Mobile Number'] },
+  { title:'PM Suraksha Bima Yojana (PMSBY)', titleHindi:'प्रधानमंत्री सुरक्षा बीमा योजना', department:'Ministry of Finance', category:'Financial', description:'Accident insurance at ₹20/year premium.', descriptionHindi:'₹20/वर्ष प्रीमियम पर दुर्घटना बीमा।', benefits:'₹2 lakh for accidental death, ₹1 lakh for partial disability at ₹20/year.', benefitsHindi:'₹20/वर्ष पर दुर्घटना मृत्यु पर ₹2 लाख, आंशिक विकलांगता पर ₹1 लाख।', applicationUrl:'https://www.jansuraksha.gov.in/', criteria:{minAge:18,maxAge:70,gender:'Any',maxAnnualIncome:0,targetOccupations:[],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Bank Account'] },
+  { title:'PM Jeevan Jyoti Bima Yojana (PMJJBY)', titleHindi:'प्रधानमंत्री जीवन ज्योति बीमा योजना', department:'Ministry of Finance', category:'Financial', description:'Life insurance cover at ₹436/year premium.', descriptionHindi:'₹436/वर्ष प्रीमियम पर जीवन बीमा कवर।', benefits:'₹2 lakh life cover in case of death from any cause at ₹436/year.', benefitsHindi:'किसी भी कारण से मृत्यु पर ₹436/वर्ष पर ₹2 लाख जीवन बीमा।', applicationUrl:'https://www.jansuraksha.gov.in/', criteria:{minAge:18,maxAge:50,gender:'Any',maxAnnualIncome:0,targetOccupations:[],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Bank Account'] },
+
+  // ── HOUSING & SANITATION (6) ──────────────────────────────────
+  { title:'PM Awas Yojana – Gramin (PMAY-G)', titleHindi:'प्रधानमंत्री आवास योजना – ग्रामीण', department:'Ministry of Rural Development', category:'Housing', description:'Pucca houses with basic amenities to homeless rural families.', descriptionHindi:'बेघर ग्रामीण परिवारों को मूल सुविधाओं वाले पक्के मकान।', benefits:'₹1.20 lakh in plains and ₹1.30 lakh in hilly areas.', benefitsHindi:'मैदानी इलाकों में ₹1.20 लाख और पहाड़ी क्षेत्रों में ₹1.30 लाख।', applicationUrl:'https://pmayg.nic.in/', criteria:{minAge:18,maxAge:70,gender:'Any',maxAnnualIncome:300000,targetOccupations:[],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','BPL List Inclusion','Bank Account','Land Documents'] },
+  { title:'PM Awas Yojana – Urban (PMAY-U)', titleHindi:'प्रधानमंत्री आवास योजना – शहरी', department:'Ministry of Housing & Urban Affairs', category:'Housing', description:'Affordable housing for urban poor through CLSS and other verticals.', descriptionHindi:'सीएलएसएस और अन्य माध्यमों से शहरी गरीबों के लिए किफायती आवास।', benefits:'Interest subsidy of 3-6.5% on home loans for EWS/LIG/MIG.', benefitsHindi:'ईडब्ल्यूएस/एलआईजी/एमआईजी के लिए गृह ऋण पर 3-6.5% ब्याज सब्सिडी।', applicationUrl:'https://pmaymis.gov.in/', criteria:{minAge:18,maxAge:70,gender:'Any',maxAnnualIncome:1800000,targetOccupations:[],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Income Certificate','Bank Account','Property Documents'] },
+  { title:'Swachh Bharat Mission – Gramin (SBM-G)', titleHindi:'स्वच्छ भारत मिशन – ग्रामीण', department:'Ministry of Jal Shakti', category:'Housing', description:'Incentive for construction of individual household latrines (IHHL) in rural India.', descriptionHindi:'ग्रामीण भारत में व्यक्तिगत घरेलू शौचालय (IHHL) निर्माण के लिए प्रोत्साहन।', benefits:'₹12,000 for toilet construction for BPL households.', benefitsHindi:'बीपीएल परिवारों के लिए शौचालय निर्माण हेतु ₹12,000।', applicationUrl:'https://sbm.gov.in/', criteria:{minAge:18,maxAge:80,gender:'Any',maxAnnualIncome:100000,targetOccupations:[],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','BPL Card','Bank Account','Household Survey Data'] },
+  { title:'AMRUT (Atal Mission for Rejuvenation & Urban Transformation)', titleHindi:'अमृत (अटल नवीनीकरण और शहरी परिवर्तन मिशन)', department:'Ministry of Housing & Urban Affairs', category:'Housing', description:'Improves basic urban infrastructure — water supply, sewerage, parks, and urban transport.', descriptionHindi:'बुनियादी शहरी ढांचे में सुधार — जल आपूर्ति, सीवरेज, पार्क और शहरी परिवहन।', benefits:'Improved water supply, sewerage networks, and green spaces in cities.', benefitsHindi:'शहरों में बेहतर जल आपूर्ति, सीवरेज नेटवर्क और हरित स्थान।', applicationUrl:'https://amrut.gov.in/', criteria:{minAge:0,maxAge:120,gender:'Any',maxAnnualIncome:0,targetOccupations:[],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card'] },
+  { title:'Jal Jeevan Mission', titleHindi:'जल जीवन मिशन', department:'Ministry of Jal Shakti', category:'Housing', description:'Provides functional household tap connections (FHTC) to every rural household.', descriptionHindi:'प्रत्येक ग्रामीण परिवार को कार्यात्मक घरेलू नल कनेक्शन प्रदान करती है।', benefits:'Piped drinking water at 55 lpcd to every rural household.', benefitsHindi:'प्रत्येक ग्रामीण परिवार को 55 एलपीसीडी पाइप पेयजल।', applicationUrl:'https://jaljeevanmission.gov.in/', criteria:{minAge:0,maxAge:120,gender:'Any',maxAnnualIncome:0,targetOccupations:[],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Ration Card'] },
+  { title:'Affordable Rental Housing Complexes (ARHC)', titleHindi:'किफायती किराया आवास परिसर', department:'Ministry of Housing & Urban Affairs', category:'Housing', description:'Affordable rental housing for migrant workers and urban poor.', descriptionHindi:'प्रवासी श्रमिकों और शहरी गरीबों के लिए किफायती किराया आवास।', benefits:'Dignified rental housing near workplaces at affordable rates.', benefitsHindi:'किफायती दरों पर कार्यस्थलों के पास सम्मानजनक किराया आवास।', applicationUrl:'https://pmaymis.gov.in/', criteria:{minAge:18,maxAge:60,gender:'Any',maxAnnualIncome:600000,targetOccupations:['Salaried','Business','Unemployed'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Income Proof','Employment Certificate'] },
+
+  // ── SOCIAL SECURITY & SENIORS (8) ─────────────────────────────
+  { title:'IGNOAPS (Old Age Pension)', titleHindi:'इंदिरा गांधी राष्ट्रीय वृद्धावस्था पेंशन योजना', department:'Ministry of Rural Development', category:'Social Security', description:'Monthly pension for elderly BPL persons aged 60+.', descriptionHindi:'60+ आयु के बीपीएल वृद्ध व्यक्तियों के लिए मासिक पेंशन।', benefits:'₹200-₹500/month central pension (states top up additionally).', benefitsHindi:'₹200-₹500/माह केंद्रीय पेंशन (राज्य अतिरिक्त जोड़ते हैं)।', applicationUrl:'https://nsap.nic.in/', criteria:{minAge:60,maxAge:120,gender:'Any',maxAnnualIncome:100000,targetOccupations:[],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Age Proof','BPL Certificate','Bank Account'] },
+  { title:'IGNWPS (Widow Pension)', titleHindi:'इंदिरा गांधी राष्ट्रीय विधवा पेंशन योजना', department:'Ministry of Rural Development', category:'Social Security', description:'Monthly pension for BPL widows aged 40-79 years.', descriptionHindi:'40-79 वर्ष आयु की बीपीएल विधवाओं के लिए मासिक पेंशन।', benefits:'₹300/month central pension for eligible widows.', benefitsHindi:'पात्र विधवाओं के लिए ₹300/माह केंद्रीय पेंशन।', applicationUrl:'https://nsap.nic.in/', criteria:{minAge:40,maxAge:79,gender:'Female',maxAnnualIncome:100000,targetOccupations:[],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Death Certificate of Husband','BPL Certificate','Bank Account'] },
+  { title:'IGNDPS (Disability Pension)', titleHindi:'इंदिरा गांधी राष्ट्रीय विकलांगता पेंशन योजना', department:'Ministry of Rural Development', category:'Social Security', description:'Monthly pension for severely disabled BPL persons aged 18-79.', descriptionHindi:'18-79 वर्ष आयु के गंभीर विकलांग बीपीएल व्यक्तियों के लिए मासिक पेंशन।', benefits:'₹300/month central pension for persons with 80%+ disability.', benefitsHindi:'80%+ विकलांगता वाले व्यक्तियों के लिए ₹300/माह केंद्रीय पेंशन।', applicationUrl:'https://nsap.nic.in/', criteria:{minAge:18,maxAge:79,gender:'Any',maxAnnualIncome:100000,targetOccupations:[],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Disability Certificate','BPL Certificate','Bank Account'] },
+  { title:'Rashtriya Vayoshri Yojana (RVY)', titleHindi:'राष्ट्रीय वयोश्री योजना', department:'Ministry of Social Justice & Empowerment', category:'Social Security', description:'Provides physical aids and assisted-living devices to BPL senior citizens.', descriptionHindi:'बीपीएल वरिष्ठ नागरिकों को भौतिक सहायता उपकरण प्रदान करती है।', benefits:'Free walking sticks, hearing aids, wheelchairs, spectacles, etc.', benefitsHindi:'मुफ्त छड़ी, श्रवण यंत्र, व्हीलचेयर, चश्मे आदि।', applicationUrl:'https://www.alimco.in/RVY.aspx', criteria:{minAge:60,maxAge:120,gender:'Any',maxAnnualIncome:100000,targetOccupations:[],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Age Proof','BPL Certificate','Disability Certificate'] },
+  { title:'PM Vaya Vandana Yojana (PMVVY)', titleHindi:'प्रधानमंत्री वय वंदना योजना', department:'Ministry of Finance', category:'Social Security', description:'Pension plan for senior citizens with guaranteed 7.4% annual return.', descriptionHindi:'वरिष्ठ नागरिकों के लिए 7.4% गारंटीकृत वार्षिक रिटर्न वाली पेंशन योजना।', benefits:'Guaranteed pension with assured return on investment up to ₹15 lakh.', benefitsHindi:'₹15 लाख तक निवेश पर सुनिश्चित रिटर्न के साथ गारंटीकृत पेंशन।', applicationUrl:'https://www.licindia.in/', criteria:{minAge:60,maxAge:100,gender:'Any',maxAnnualIncome:0,targetOccupations:[],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Age Proof','PAN Card','Bank Account'] },
+  { title:'National Social Assistance Programme (NSAP)', titleHindi:'राष्ट्रीय सामाजिक सहायता कार्यक्रम', department:'Ministry of Rural Development', category:'Social Security', description:'Umbrella scheme covering old-age, widow, and disability pensions plus family benefit.', descriptionHindi:'वृद्धावस्था, विधवा और विकलांगता पेंशन तथा पारिवारिक लाभ को कवर करने वाली छतरी योजना।', benefits:'Monthly pension and one-time family benefit of ₹20,000 on death of breadwinner.', benefitsHindi:'मासिक पेंशन और कमाने वाले की मृत्यु पर ₹20,000 एकमुश्त पारिवारिक लाभ।', applicationUrl:'https://nsap.nic.in/', criteria:{minAge:18,maxAge:120,gender:'Any',maxAnnualIncome:100000,targetOccupations:[],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','BPL Certificate','Bank Account'] },
+  { title:'Divyangjan Swavalamban Yojana', titleHindi:'दिव्यांगजन स्वावलंबन योजना', department:'Department of Empowerment of PwD', category:'Social Security', description:'Concessional loans to persons with disabilities for self-employment.', descriptionHindi:'दिव्यांग व्यक्तियों को स्वरोजगार के लिए रियायती ऋण।', benefits:'Loans up to ₹25 lakh at concessional interest for PwD entrepreneurs.', benefitsHindi:'दिव्यांग उद्यमियों के लिए रियायती ब्याज पर ₹25 लाख तक का ऋण।', applicationUrl:'https://www.nhfdc.nic.in/', criteria:{minAge:18,maxAge:60,gender:'Any',maxAnnualIncome:0,targetOccupations:['Business','Self-employed','Unemployed'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Disability Certificate','Business Plan','Bank Account'] },
+  { title:'Deendayal Disabled Rehabilitation Scheme (DDRS)', titleHindi:'दीनदयाल विकलांग पुनर्वास योजना', department:'Department of Empowerment of PwD', category:'Social Security', description:'Grants-in-aid to NGOs working for rehabilitation of persons with disabilities.', descriptionHindi:'दिव्यांग व्यक्तियों के पुनर्वास के लिए काम करने वाले एनजीओ को अनुदान सहायता।', benefits:'Free vocational training, special education, and rehabilitation services.', benefitsHindi:'मुफ्त व्यावसायिक प्रशिक्षण, विशेष शिक्षा और पुनर्वास सेवाएं।', applicationUrl:'https://disabilityaffairs.gov.in/', criteria:{minAge:0,maxAge:60,gender:'Any',maxAnnualIncome:0,targetOccupations:[],state:'All-India',casteCategories:ALL}, requiredDocuments:['Disability Certificate','Aadhaar Card'] },
+
+  // ── EMPLOYMENT & SKILLS (8) ───────────────────────────────────
+  { title:'PM Kaushal Vikas Yojana (PMKVY)', titleHindi:'प्रधानमंत्री कौशल विकास योजना', department:'Ministry of Skill Development & Entrepreneurship', category:'Skill Development', description:'Short-term skill training and certification for youth.', descriptionHindi:'युवाओं के लिए अल्पकालिक कौशल प्रशिक्षण और प्रमाणन।', benefits:'Free skill training, certification, ₹8,000 reward on completion.', benefitsHindi:'मुफ्त कौशल प्रशिक्षण, प्रमाणन, पूरा होने पर ₹8,000 इनाम।', applicationUrl:'https://pmkvyofficial.org/', criteria:{minAge:15,maxAge:45,gender:'Any',maxAnnualIncome:0,targetOccupations:['Student','Unemployed'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Bank Account','Education Certificate'] },
+  { title:'Mahatma Gandhi NREGA', titleHindi:'महात्मा गांधी नरेगा', department:'Ministry of Rural Development', category:'Employment', description:'Guarantees 100 days of wage employment per year to rural households.', descriptionHindi:'ग्रामीण परिवारों को प्रति वर्ष 100 दिन मजदूरी रोजगार की गारंटी।', benefits:'100 days guaranteed employment at minimum wage rates.', benefitsHindi:'न्यूनतम मजदूरी दरों पर 100 दिन गारंटीकृत रोजगार।', applicationUrl:'https://nrega.nic.in/', criteria:{minAge:18,maxAge:65,gender:'Any',maxAnnualIncome:0,targetOccupations:['Unemployed','Farmer'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Job Card','Bank Account'] },
+  { title:'National Apprenticeship Promotion Scheme (NAPS)', titleHindi:'राष्ट्रीय शिक्षुता प्रोत्साहन योजना', department:'Ministry of Skill Development & Entrepreneurship', category:'Employment', description:'Promotes apprenticeship training by sharing stipend cost with employers.', descriptionHindi:'नियोक्ताओं के साथ वजीफा लागत साझा करके शिक्षुता प्रशिक्षण को बढ़ावा देती है।', benefits:'25% stipend reimbursement to employers (up to ₹1,500/month).', benefitsHindi:'नियोक्ताओं को 25% वजीफा प्रतिपूर्ति (₹1,500/माह तक)।', applicationUrl:'https://www.apprenticeshipindia.gov.in/', criteria:{minAge:14,maxAge:30,gender:'Any',maxAnnualIncome:0,targetOccupations:['Student','Unemployed'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Education Certificate','Bank Account'] },
+  { title:'National Career Service (NCS) Portal', titleHindi:'राष्ट्रीय करियर सेवा पोर्टल', department:'Ministry of Labour & Employment', category:'Employment', description:'Online platform connecting job seekers, employers, and training providers.', descriptionHindi:'नौकरी चाहने वालों, नियोक्ताओं और प्रशिक्षण प्रदाताओं को जोड़ने वाला ऑनलाइन प्लेटफॉर्म।', benefits:'Free job matching, career counselling, and skill assessment.', benefitsHindi:'मुफ्त नौकरी मिलान, करियर परामर्श और कौशल मूल्यांकन।', applicationUrl:'https://www.ncs.gov.in/', criteria:{minAge:14,maxAge:65,gender:'Any',maxAnnualIncome:0,targetOccupations:['Student','Unemployed','Salaried'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Education Certificate'] },
+  { title:'DDU-GKY (Deen Dayal Upadhyaya Grameen Kaushalya Yojana)', titleHindi:'दीन दयाल उपाध्याय ग्रामीण कौशल्य योजना', department:'Ministry of Rural Development', category:'Skill Development', description:'Skill training and placement for rural youth from poor families.', descriptionHindi:'गरीब परिवारों के ग्रामीण युवाओं के लिए कौशल प्रशिक्षण और प्लेसमेंट।', benefits:'Free skill training, placement assistance, and post-placement support.', benefitsHindi:'मुफ्त कौशल प्रशिक्षण, प्लेसमेंट सहायता और प्लेसमेंट के बाद सहायता।', applicationUrl:'https://ddugky.gov.in/', criteria:{minAge:15,maxAge:35,gender:'Any',maxAnnualIncome:100000,targetOccupations:['Unemployed','Student'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','BPL/MGNREGA Card','Bank Account'] },
+  { title:'Skill India Digital (SID) Portal', titleHindi:'स्किल इंडिया डिजिटल पोर्टल', department:'Ministry of Skill Development & Entrepreneurship', category:'Skill Development', description:'Digital platform for discovering and accessing skill development courses.', descriptionHindi:'कौशल विकास पाठ्यक्रमों की खोज और पहुंच के लिए डिजिटल प्लेटफॉर्म।', benefits:'Access to 1,000+ free online courses with digital credentials.', benefitsHindi:'डिजिटल क्रेडेंशियल के साथ 1,000+ मुफ्त ऑनलाइन पाठ्यक्रमों तक पहुंच।', applicationUrl:'https://www.skillindia.gov.in/', criteria:{minAge:14,maxAge:60,gender:'Any',maxAnnualIncome:0,targetOccupations:['Student','Unemployed','Salaried'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Mobile Number'] },
+  { title:'PM Viksit Bharat Internship Portal', titleHindi:'पीएम विकसित भारत इंटर्नशिप पोर्टल', department:'Ministry of Corporate Affairs', category:'Employment', description:'Internship opportunities with top 500 companies for youth aged 21-24.', descriptionHindi:'21-24 वर्ष के युवाओं के लिए शीर्ष 500 कंपनियों में इंटर्नशिप के अवसर।', benefits:'₹5,000/month stipend and ₹6,000 one-time grant for 12-month internship.', benefitsHindi:'12-महीने की इंटर्नशिप के लिए ₹5,000/माह वजीफा और ₹6,000 एकमुश्त अनुदान।', applicationUrl:'https://pminternship.mca.gov.in/', criteria:{minAge:21,maxAge:24,gender:'Any',maxAnnualIncome:800000,targetOccupations:['Student','Unemployed'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Education Certificate','Bank Account'] },
+  { title:'Aatmanirbhar Bharat Rojgar Yojana (ABRY)', titleHindi:'आत्मनिर्भर भारत रोजगार योजना', department:'Ministry of Labour & Employment', category:'Employment', description:'Incentivizes employers to create new jobs by subsidizing EPFO contributions.', descriptionHindi:'ईपीएफओ अंशदान पर सब्सिडी देकर नियोक्ताओं को नई नौकरियां सृजित करने के लिए प्रोत्साहित करती है।', benefits:'Government pays employee and employer EPF contribution for 2 years.', benefitsHindi:'सरकार 2 वर्षों के लिए कर्मचारी और नियोक्ता ईपीएफ अंशदान देती है।', applicationUrl:'https://www.epfindia.gov.in/', criteria:{minAge:18,maxAge:35,gender:'Any',maxAnnualIncome:0,targetOccupations:['Salaried','Unemployed'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','UAN Number','Bank Account'] },
+  { title:'Vidyasaarathi Scholarship', titleHindi:'विद्यासारथी छात्रवृत्ति', department:'NSDL e-Governance', category:'Education', description:'Various corporate scholarships for students pursuing different courses.', descriptionHindi:'विभिन्न पाठ्यक्रम कर रहे छात्रों के लिए कॉर्पोरेट छात्रवृत्तियां।', benefits:'Financial assistance ranging from ₹10,000 to ₹50,000 depending on the course.', benefitsHindi:'पाठ्यक्रम के आधार पर ₹10,000 से ₹50,000 तक की वित्तीय सहायता।', applicationUrl:'https://www.vidyasaarathi.co.in/', criteria:{minAge:15,maxAge:30,gender:'Any',maxAnnualIncome:500000,targetOccupations:['Student'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Income Certificate','Marksheet','Bank Account'] },
+  { title:'AICTE Swanath Scholarship Scheme', titleHindi:'एआईसीटीई स्वनाथ छात्रवृत्ति योजना', department:'AICTE, Ministry of Education', category:'Education', description:'Support for orphans, wards of parents died due to Covid-19, or wards of Armed Forces.', descriptionHindi:'अनाथों, कोविड-19 के कारण माता-पिता खोने वालों या सशस्त्र बलों के बच्चों के लिए सहायता।', benefits:'₹50,000 per annum for every year of study.', benefitsHindi:'अध्ययन के प्रत्येक वर्ष के लिए ₹50,000 प्रति वर्ष।', applicationUrl:'https://www.aicte-india.org/', criteria:{minAge:15,maxAge:30,gender:'Any',maxAnnualIncome:800000,targetOccupations:['Student'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Death Certificate of Parents','Income Certificate','Marksheet'] },
+  { title:'Ayushman Arogya Mandir (Health & Wellness Centres)', titleHindi:'आयुष्मान आरोग्य मंदिर (स्वास्थ्य और कल्याण केंद्र)', department:'Ministry of Health & Family Welfare', category:'Healthcare', description:'Comprehensive primary health care services closer to the community.', descriptionHindi:'समुदाय के करीब व्यापक प्राथमिक स्वास्थ्य देखभाल सेवाएं।', benefits:'Free diagnostics, free medicines, and wellness activities.', benefitsHindi:'मुफ्त निदान, मुफ्त दवाएं और कल्याण गतिविधियां।', applicationUrl:'https://ab-hwc.nhp.gov.in/', criteria:{minAge:0,maxAge:120,gender:'Any',maxAnnualIncome:0,targetOccupations:[],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card'] },
+  { title:'Rojgar Mela - National Career Service', titleHindi:'रोजगार मेला - राष्ट्रीय करियर सेवा', department:'Ministry of Labour & Employment', category:'Employment', description:'Job fairs connecting job seekers with prospective employers.', descriptionHindi:'नौकरी चाहने वालों को संभावित नियोक्ताओं से जोड़ने वाले रोजगार मेले।', benefits:'On-the-spot job offers and interview opportunities.', benefitsHindi:'मौके पर नौकरी के प्रस्ताव और साक्षात्कार के अवसर।', applicationUrl:'https://www.ncs.gov.in/', criteria:{minAge:18,maxAge:45,gender:'Any',maxAnnualIncome:0,targetOccupations:['Unemployed','Student'],state:'All-India',casteCategories:ALL}, requiredDocuments:['Aadhaar Card','Resume','Education Certificate'] }
 ];
 
-const seedSchemes = async () => {
+const seedDB = async () => {
   try {
     await connectDB();
 
@@ -244,29 +110,14 @@ const seedSchemes = async () => {
     console.log(`Seeded ${created.length} government schemes`);
 
     const adminEmail = 'admin@schemesphere.gov.in';
-    const adminPassword = 'Admin@123SchemeSphere';
-    const adminHashed = await bcrypt.hash(adminPassword, 10);
-
     const citizenEmail = 'citizen@schemesphere.gov.in';
-    const citizenPassword = 'Citizen@123SchemeSphere';
-    const citizenHashed = await bcrypt.hash(citizenPassword, 10);
 
     await User.deleteMany({ email: { $in: [adminEmail, citizenEmail] } });
 
-    await User.create({
-      name: 'SchemeSphere Admin',
-      email: adminEmail,
-      password: adminHashed,
-      role: 'admin',
-    });
+    await User.create({ name: 'SchemeSphere Admin', email: adminEmail, password: await bcrypt.hash('Admin@123SchemeSphere', 10), role: 'admin' });
     console.log(`Admin user ready: ${adminEmail}`);
 
-    await User.create({
-      name: 'Test Citizen',
-      email: citizenEmail,
-      password: citizenHashed,
-      role: 'citizen',
-    });
+    await User.create({ name: 'Test Citizen', email: citizenEmail, password: await bcrypt.hash('Citizen@123SchemeSphere', 10), role: 'citizen' });
     console.log(`Citizen user ready: ${citizenEmail}`);
 
     await mongoose.connection.close();
@@ -278,4 +129,4 @@ const seedSchemes = async () => {
   }
 };
 
-seedSchemes();
+seedDB();
